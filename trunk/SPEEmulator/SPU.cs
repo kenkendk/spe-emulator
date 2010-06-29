@@ -79,6 +79,7 @@ namespace SPEEmulator
         private Register[] m_registers;
 
         private uint m_pc;
+        private bool m_doRun = true;
 
         private Dictionary<Type, System.Reflection.MethodInfo> m_executionFunctions;
 
@@ -110,19 +111,65 @@ namespace SPEEmulator
 
         public void Run()
         {
-            while (true)
-            {
-                uint opcode =
-                    (uint)(m_spe.LS[PC] << (8 * 3)) |
-                    ((uint)m_spe.LS[PC + 1] << (8 * 2)) |
-                    ((uint)m_spe.LS[PC + 2] << (8 * 1)) |
-                    ((uint)m_spe.LS[PC + 3] << (8 * 0))
-                    ;
+            System.IO.StreamWriter textFile;
+            List<OpCodes.Bases.Mnemonic> missing = new List<OpCodes.Bases.Mnemonic>();
 
-                SPEEmulator.OpCodes.Bases.Instruction op = m_parser.FindCode(opcode);
-                Execute(op);
-                PC += 4;
+            try
+            {
+                textFile = System.IO.File.CreateText("ProgramOpCodes.txt");
             }
+            catch (Exception)
+            {
+                throw new Exception("Could not open/load ProgramOpCodes.txt");
+            }
+
+            while (m_doRun)
+            {
+                try
+                {
+                    uint opcode =
+                        (uint)(m_spe.LS[PC] << (8 * 3)) |
+                        ((uint)m_spe.LS[PC + 1] << (8 * 2)) |
+                        ((uint)m_spe.LS[PC + 2] << (8 * 1)) |
+                        ((uint)m_spe.LS[PC + 3] << (8 * 0))
+                        ;
+
+                    SPEEmulator.OpCodes.Bases.Instruction op = m_parser.FindCode(opcode);
+
+                    if (textFile != null)
+                        textFile.Write(PC + ": " + op.ToString());
+
+                    textFile.Flush();
+
+                    try
+                    {
+                        Execute(op);
+                    }
+                    catch (Exception)
+                    {
+                        textFile.Write(" - Not implemented");
+                        if (!missing.Contains(op.Mnemonic))
+                            missing.Add(op.Mnemonic);
+                    }
+
+                    textFile.WriteLine();
+
+                    textFile.Flush();
+                }
+                catch (Exception)
+                {
+                    break;
+                }
+            }
+
+            textFile.WriteLine("\n" +  missing.Count + " opcodes is NOT implemented");
+
+            missing.Sort();
+
+            foreach (OpCodes.Bases.Mnemonic mnemomic in missing)
+                textFile.WriteLine(mnemomic.ToString());
+
+            textFile.Flush();
         }
 
         /// <summary>
@@ -134,17 +181,67 @@ namespace SPEEmulator
             set { m_pc = value; }
         }
 
+        /// <summary>
+        /// Expands an immediate value to 32 bits
+        /// </summary>
+        /// <param name="x">The instruction with the immediate value to expand</param>
+        /// <param name="shift">The number of bits the value is shifted left</param>
+        /// <returns>The 32bit sign extended value as an unsigned int</returns>
+        private uint RepLeftBit(OpCodes.Bases.RI7 x, int shift)
+        {
+            return (((x.I7 & 0x40) != 0 ? 0xffffff80 : 0x00000000) | x.I7) << shift;
+        }
+
+        /// <summary>
+        /// Expands an immediate value to 32 bits
+        /// </summary>
+        /// <param name="x">The instruction with the immediate value to expand</param>
+        /// <param name="shift">The number of bits the value is shifted left</param>
+        /// <returns>The 32bit sign extended value as an unsigned int</returns>
+        private uint RepLeftBit(OpCodes.Bases.RI10 x, int shift)
+        {
+            return (((x.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000) | x.I10) << shift;
+        }
+
+        /// <summary>
+        /// Expands an immediate value to 32 bits
+        /// </summary>
+        /// <param name="x">The instruction with the immediate value to expand</param>
+        /// <param name="shift">The number of bits the value is shifted left</param>
+        /// <returns>The 32bit sign extended value as an unsigned int</returns>
+        private uint RepLeftBit(OpCodes.Bases.RI16 x, int shift)
+        {
+            return (((x.I16 & 0x8000) != 0 ? 0xffff0000 : 0x00000000) | x.I16) << shift;
+        }
+
+        /// <summary>
+        /// Expands an immediate value to 32 bits
+        /// </summary>
+        /// <param name="x">The instruction with the immediate value to expand</param>
+        /// <param name="shift">The number of bits the value is shifted left</param>
+        /// <returns>The 32bit sign extended value as an unsigned int</returns>
+        private uint RepLeftBit(OpCodes.Bases.RI18 x, int shift)
+        {
+            return (((x.I18 & 0x20000) != 0 ? 0xfffc0000 : 0x00000000) | x.I18) << shift;
+        }
+
         private void Execute(OpCodes.Bases.Instruction i)
         {
+            this.PC += 4;
+            uint next = this.PC;
+
             System.Reflection.MethodInfo mi;
             if (!m_executionFunctions.TryGetValue(i.GetType(), out mi) || mi == null)
                 throw new Exception(string.Format("Unable to execute instruction of type {0}", i.Mnemonic));
             mi.Invoke(this, new object[] { i });
+
+            this.PC = next;
+            m_doRun = true;
         }
 
         private void CopyToLS(Register r, long lsOffset)
         {
-            Array.Copy(r.Value.Value, 0, m_spe.LS, lsOffset, 16); 
+            Array.Copy(r.Value.Value, 0, m_spe.LS, lsOffset & m_spe.LSLR & (~0xf), 16); 
         }
 
         private void CopyFromLS(Register r, long lsOffset)
@@ -154,52 +251,47 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.lqd i)
         {
-            //TODO: Signextend
-            CopyFromLS(m_registers[i.RT], (((i.I10 << 4) + m_registers[i.RA].Word & (~0xf))));
+            CopyFromLS(m_registers[i.RT], ((int)RepLeftBit(i, 4) + (int)m_registers[i.RA].Word));
         }
 
         private void Execute(OpCodes.lqx i)
         {
-            CopyFromLS(m_registers[i.RT], m_registers[i.RB].Word + m_registers[i.RA].Word & (~0xf));
+            CopyFromLS(m_registers[i.RT], (m_registers[i.RB].Word + m_registers[i.RA].Word));
         }
 
         private void Execute(OpCodes.lqa i)
         {
-            uint tmp = (i.I16 & 0x8000) != 0 ? 0xffff0000 : 0x00000000;
-            CopyFromLS(m_registers[i.RT], (((i.I16 | tmp) << 2) & (~0xf)));
+            CopyFromLS(m_registers[i.RT], RepLeftBit(i, 2));
         }
 
         private void Execute(OpCodes.lqr i)
         {
-            uint tmp = (i.I16 & 0x8000) != 0 ? 0xffff0000 : 0x00000000;
-            CopyFromLS(m_registers[i.RT], (((i.I16 | tmp) << 2) + PC) & (~0xf));
+            CopyFromLS(m_registers[i.RT], (RepLeftBit(i, 2) + (PC - 4)));
         }
 
         private void Execute(OpCodes.stqd i)
         {
-            CopyToLS(m_registers[i.RT], ((i.I10 << 4) + m_registers[i.RA].Word) & ~0xf);
+            CopyToLS(m_registers[i.RT], (int)RepLeftBit(i, 4) + (int)m_registers[i.RA].Word);
         }
 
         private void Execute(OpCodes.stqx i)
         {
-            CopyToLS(m_registers[i.RT], (m_registers[i.RA].Word + m_registers[i.RB].Word) & ~0xf);
+            CopyToLS(m_registers[i.RT], m_registers[i.RA].Word + m_registers[i.RB].Word);
         }
 
         private void Execute(OpCodes.stqa i)
         {
-            uint tmp = (i.I16 & 0x8000) != 0 ? 0xffff0000 : 0x00000000;
-            CopyToLS(m_registers[i.RT], ((i.I16 | tmp) << 2) & ~0xf);
+            CopyToLS(m_registers[i.RT], RepLeftBit(i, 2));
         }
 
         private void Execute(OpCodes.stqr i)
         {
-            uint tmp = (i.I16 & 0x8000) != 0 ? 0xffff0000 : 0x00000000;
-            CopyToLS(m_registers[i.RT], (((i.I16 | tmp) << 2) + PC) & (~0xf));
+            CopyToLS(m_registers[i.RT], RepLeftBit(i, 2) + (PC - 4));
         }
 
         private void Execute(OpCodes.cbd i)
         {
-            uint index = (i.I7 + m_registers[i.RA].Word) & 0xf;
+            uint index = (uint)((int)RepLeftBit(i, 0) + (int)m_registers[i.RA].Word) & 0xf;
             m_registers[i.RT].Value.high = 0x1011121314151617u;
             m_registers[i.RT].Value.low = 0x18191A1B1C1D1E1Fu;
             m_registers[i.RT].Value.Value[index] = 0x03;
@@ -215,7 +307,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.chd i)
         {
-            uint index = (i.I7 + m_registers[i.RA].Word) & 0xf;
+            uint index = (uint)((int)RepLeftBit(i, 0) + (int)m_registers[i.RA].Word) & 0xe;
             m_registers[i.RT].Value.high = 0x1011121314151617u;
             m_registers[i.RT].Value.low = 0x18191A1B1C1D1E1Fu;
             m_registers[i.RT].Value.Value[index] = 0x02;
@@ -224,7 +316,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.chx i)
         {
-            uint index = (m_registers[i.RB].Word + m_registers[i.RA].Word) & 0xf;
+            uint index = (m_registers[i.RB].Word + m_registers[i.RA].Word) & 0xe;
             m_registers[i.RT].Value.high = 0x1011121314151617u;
             m_registers[i.RT].Value.low = 0x18191A1B1C1D1E1Fu;
             m_registers[i.RT].Value.Value[index] = 0x02;
@@ -233,7 +325,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.cwd i)
         {
-            uint index = (i.I7 + m_registers[i.RA].Word) & 0xf;
+            uint index = (uint)((int)RepLeftBit(i, 0) + (int)m_registers[i.RA].Word) & 0xc; 
             m_registers[i.RT].Value.high = 0x1011121314151617u;
             m_registers[i.RT].Value.low = 0x18191A1B1C1D1E1Fu;
             m_registers[i.RT].Value.Value[index] = 0x00;
@@ -244,7 +336,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.cwx i)
         {
-            uint index = (m_registers[i.RB].Word + m_registers[i.RA].Word) & 0xf;
+            uint index = (m_registers[i.RB].Word + m_registers[i.RA].Word) & 0xc;
             m_registers[i.RT].Value.high = 0x1011121314151617u;
             m_registers[i.RT].Value.low = 0x18191A1B1C1D1E1Fu;
             m_registers[i.RT].Value.Value[index] = 0x00;
@@ -255,7 +347,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.cdd i)
         {
-            uint index = (i.I7 + m_registers[i.RA].Word) & 0xf;
+            uint index = (uint)((int)RepLeftBit(i, 0) + (int)m_registers[i.RA].Word) & 0x8;
             m_registers[i.RT].Value.high = 0x1011121314151617u;
             m_registers[i.RT].Value.low = 0x18191A1B1C1D1E1Fu;
             m_registers[i.RT].Value.Value[index] = 0x00;
@@ -270,7 +362,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.cdx i)
         {
-            uint index = (m_registers[i.RB].Word + m_registers[i.RA].Word) & 0xf;
+            uint index = (m_registers[i.RB].Word + m_registers[i.RA].Word) & 0x8;
             m_registers[i.RT].Value.high = 0x1011121314151617u;
             m_registers[i.RT].Value.low = 0x18191A1B1C1D1E1Fu;
             m_registers[i.RT].Value.Value[index] = 0x00;
@@ -285,39 +377,28 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.ilh i)
         {
-            for (int j = 0; j < 8; j++)
-            {
-                m_registers[i.RT].Value.Value[(j * 2) + 1] = (byte)(i.I16 & 0xff);
-                m_registers[i.RT].Value.Value[j * 2] = (byte)((i.I16 >> 8) & 0xff);
-            }
+            m_registers[i.RT].Value = ALUHalfWord(null, null, null, (a, b, c, carry) => i.I16);
         }
 
         private void Execute(OpCodes.ilhu i)
         {
-            uint v = (i.I16 << 2);
-
-            for (int j = 0; j < 16; j += 4)
-            {
-                m_registers[i.RT].Value.Value[j + 3] = (byte)(v & 0xff);
-                m_registers[i.RT].Value.Value[j + 2] = (byte)((v >> 8) & 0xff);
-                m_registers[i.RT].Value.Value[j + 1] = (byte)((v >> 16) & 0xff);
-                m_registers[i.RT].Value.Value[j] = (byte)((v >> 24) & 0xff);
-            }
+            m_registers[i.RT].Value = ALUWord(null, null, null, (a, b, c, carry) => i.I16 << 16);
         }
 
         private void Execute(OpCodes.il i)
         {
-            m_registers[i.RT].Value = new RegisterValue(((i.I16 & 0x8000) != 0 ? 0xffff0000 : 0x00000000) | i.I16);
+            uint v = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUWord(null, null, null, (a, b, c, carry) => v);
         }
 
         private void Execute(OpCodes.ila i)
         {
-            m_registers[i.RT].Value = new RegisterValue(i.I18);
+            m_registers[i.RT].Value = ALUWord(null, null, null, (a, b, c, carry) => i.I18);
         }
 
         private void Execute(OpCodes.iohl i)
         {
-            m_registers[i.RT].Value |= new RegisterValue(i.I16);
+            m_registers[i.RT].Value = ALUWord(null, null, null, (a, b, c, carry) => i.I16);
         }
 
         private void Execute(OpCodes.fsmbi i)
@@ -328,22 +409,24 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.ah i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a + b) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (uint)(a + b));
         }
 
         private void Execute(OpCodes.ahi i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, new RegisterValue(((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000) | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (a + b) & 0xffff);
+            ushort s = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a + s));
         }
 
         private void Execute(OpCodes.a i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a + b) & 0xffffffff);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a + b);
         }
 
         private void Execute(OpCodes.ai i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, new RegisterValue(((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000) | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (a + b) & 0xffffffff);
+            uint t = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => a + t);
         }
 
         /// <summary>
@@ -362,11 +445,11 @@ namespace SPEEmulator
             for (int j = 15; j > 0; j--)
             {
                 carry = exec(
-                    a.Value[j]
+                    a == null ? (byte)0 : a.Value[j]
                     ,
-                    b.Value[j]
+                    b == null ? (byte)0 : b.Value[j]
                     ,
-                    c.Value[j]
+                    c == null ? (byte)0 : c.Value[j]
                     ,
                     (byte)(carry >> 8)
                     );
@@ -385,7 +468,7 @@ namespace SPEEmulator
         /// <param name="c">Register operand C</param>
         /// <param name="exec">The function to execute, is given the paramters a,b,c and carry value</param>
         /// <returns>The calculated value</returns>
-        private RegisterValue ALUHalfWord(RegisterValue a, RegisterValue b, RegisterValue c, Func<uint, uint, uint, uint, uint> exec)
+        private RegisterValue ALUHalfWord(RegisterValue a, RegisterValue b, RegisterValue c, Func<ushort, ushort, ushort, ushort, uint> exec)
         {
             RegisterValue x = new RegisterValue();
             ulong carry = 0;
@@ -393,13 +476,13 @@ namespace SPEEmulator
             for (int j = 14; j > 0; j -= 2)
             {
                 carry = exec(
-                    (((uint)a.Value[j + 1] << 8) | (uint)a.Value[j])
+                    a == null ? (ushort)0 : (ushort)((a.Value[j + 1] << 8) | a.Value[j])
                     ,
-                    (((uint)b.Value[j + 1] << 8) | (uint)b.Value[j])
+                    b == null ? (ushort)0 : (ushort)((b.Value[j + 1] << 8) | b.Value[j])
                     ,
-                    (((uint)c.Value[j + 1] << 8) | (uint)c.Value[j])
+                    c == null ? (ushort)0 : (ushort)((c.Value[j + 1] << 8) | c.Value[j])
                     ,
-                    (uint)(carry >> 16)
+                    (ushort)(carry >> 16)
                     );
 
                 x.Value[j] = (byte)(carry & 0xff);
@@ -426,11 +509,11 @@ namespace SPEEmulator
             {
                 carry =
                     exec(
-                        (((uint)a.Value[j + 3] << 24) | ((uint)a.Value[j + 2] << 16) | ((uint)a.Value[j + 1] << 8) | (uint)a.Value[j])
+                        a == null ? 0u : (((uint)a.Value[j + 3] << 24) | ((uint)a.Value[j + 2] << 16) | ((uint)a.Value[j + 1] << 8) | (uint)a.Value[j])
                         ,
-                        (((uint)b.Value[j + 3] << 24) | ((uint)b.Value[j + 2] << 16) | ((uint)b.Value[j + 1] << 8) | (uint)b.Value[j])
+                        b == null ? 0u : (((uint)b.Value[j + 3] << 24) | ((uint)b.Value[j + 2] << 16) | ((uint)b.Value[j + 1] << 8) | (uint)b.Value[j])
                         ,
-                        (((uint)c.Value[j + 3] << 24) | ((uint)c.Value[j + 2] << 16) | ((uint)c.Value[j + 1] << 8) | (uint)c.Value[j])
+                        c == null ? 0u : (((uint)c.Value[j + 3] << 24) | ((uint)c.Value[j + 2] << 16) | ((uint)c.Value[j + 1] << 8) | (uint)c.Value[j])
                         ,
                         (uint)(carry >> 32)
                     );
@@ -445,7 +528,7 @@ namespace SPEEmulator
         }
 
         /// <summary>
-        /// Performs an operation on a set of registers, one word at a time
+        /// Performs an operation on a set of registers, one double word at a time
         /// </summary>
         /// <param name="a">Register operand A</param>
         /// <param name="b">Register operand B</param>
@@ -460,13 +543,13 @@ namespace SPEEmulator
             {
                 carry =
                     exec(
-                        (((ulong)a.Value[j + 7] << 56) | ((ulong)a.Value[j + 6] << 48) | ((ulong)a.Value[j + 5] << 40) | ((ulong)a.Value[j + 4] << 32) | ((ulong)a.Value[j + 3] << 24) | ((ulong)a.Value[j + 2] << 16) | ((ulong)a.Value[j + 1] << 8) | (ulong)a.Value[j])
+                        a == null ? 0u : (((ulong)a.Value[j + 7] << 56) | ((ulong)a.Value[j + 6] << 48) | ((ulong)a.Value[j + 5] << 40) | ((ulong)a.Value[j + 4] << 32) | ((ulong)a.Value[j + 3] << 24) | ((ulong)a.Value[j + 2] << 16) | ((ulong)a.Value[j + 1] << 8) | (ulong)a.Value[j])
                         ,
-                        (((ulong)b.Value[j + 7] << 56) | ((ulong)b.Value[j + 6] << 48) | ((ulong)b.Value[j + 5] << 40) | ((ulong)b.Value[j + 4] << 32) | ((ulong)b.Value[j + 3] << 24) | ((ulong)b.Value[j + 2] << 16) | ((ulong)b.Value[j + 1] << 8) | (ulong)b.Value[j])
+                        b == null ? 0u : (((ulong)b.Value[j + 7] << 56) | ((ulong)b.Value[j + 6] << 48) | ((ulong)b.Value[j + 5] << 40) | ((ulong)b.Value[j + 4] << 32) | ((ulong)b.Value[j + 3] << 24) | ((ulong)b.Value[j + 2] << 16) | ((ulong)b.Value[j + 1] << 8) | (ulong)b.Value[j])
                         ,
-                        (((ulong)c.Value[j + 7] << 56) | ((ulong)c.Value[j + 6] << 48) | ((ulong)c.Value[j + 5] << 40) | ((ulong)c.Value[j + 4] << 32) | ((ulong)c.Value[j + 3] << 24) | ((ulong)c.Value[j + 2] << 16) | ((ulong)c.Value[j + 1] << 8) | (ulong)c.Value[j])
+                        c == null ? 0u : (((ulong)c.Value[j + 7] << 56) | ((ulong)c.Value[j + 6] << 48) | ((ulong)c.Value[j + 5] << 40) | ((ulong)c.Value[j + 4] << 32) | ((ulong)c.Value[j + 3] << 24) | ((ulong)c.Value[j + 2] << 16) | ((ulong)c.Value[j + 1] << 8) | (ulong)c.Value[j])
                         ,
-                        (ulong)(carry >> 32)
+                        (ulong)(carry >> 64)
                     );
 
                 x.Value[j + 7] = (byte)((carry >> 56) & 0xff);
@@ -484,85 +567,96 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.sfh i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a + ~b + 1) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (uint)(b + ~a + 1));
         }
 
         private void Execute(OpCodes.sfhi i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, new RegisterValue(((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000) | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (a + ~b + 1) & 0xffff);
+            ushort t = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(t + ~a + 1));
         }
 
         private void Execute(OpCodes.sf i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a + ~b + 1) & 0xffffffff);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => b + ~a + 1);
         }
 
         private void Execute(OpCodes.sfi i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, new RegisterValue(((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000) | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (a + ~b + 1) & 0xffffffff);
+            uint t = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(t + ~a + 1));
         }
 
         private void Execute(OpCodes.addx i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a + b + (c & 0x1)) & 0xffffffff);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, t, carry) => a + b + (t & 0x1));
         }
 
         private void Execute(OpCodes.cg i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => a + b > 0xffffffffu ? 1u : 0u);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => ((ulong)a + (ulong)b) > 0xffffffffu ? 0x1u : 0x0u);
         }
 
         private void Execute(OpCodes.cgx i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => a + b + (c & 0x1) > 0xffffffffu ? 1u : 0u);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, t, carry) => ((ulong)a + (ulong)b) + (t & 0x1) > 0xffffffffu ? 1u : 0u);
         }
 
         private void Execute(OpCodes.sfx i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a + ~b + 1 + ~(c & 0x1)) & 0xffffffff);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, t, carry) => b + ~a + (t & 0x1));
         }
 
         private void Execute(OpCodes.bg i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => a > b ? 0u : 1u);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => b >= a ? 1u : 0u);
         }
 
         private void Execute(OpCodes.bgx i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => ((a + ~b + 1) + ~(c & 0x1)) > 0xffffffff ? 0u : 1u);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, t, carry) =>
+            {
+                if ((t & 0x1) == 0x1)
+                    return b >= a ? 1u : 0u;
+                else
+                    return b > a ? 1u : 0u;
+            });
         }
 
         private void Execute(OpCodes.mpy i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => { 
-                var tmp = ((a & 0xffff) * (b & 0xffff));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => { 
+                uint tmp = ((a & 0xffff) * (b & 0xffff));
                 return ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
             });
         }
 
         private void Execute(OpCodes.mpyu i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => ((a & 0xffff) * (b & 0xffff)));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => ((a & 0xffff) * (b & 0xffff)));
         }
 
         private void Execute(OpCodes.mpyi i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, new RegisterValue(((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000) | i.I10), m_registers[i.RT].Value, (a, b, c, carry) =>
+            ushort t = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
-                var tmp = ((a & 0xffff) * (b & 0xffff));
+                var tmp = ((a & 0xffff) * t);
                 return ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
             });
         }
 
         private void Execute(OpCodes.mpyui i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, new RegisterValue(((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000) | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => ((a & 0xffff) * (b & 0xffff)));
+            ushort t = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (a & 0xffff) * t);
         }
 
         private void Execute(OpCodes.mpya i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RC].Value, (a, b, c, carry) => {
-                var tmp = ((a & 0xffff) * (b & 0xffff));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) =>
+            {
+                uint tmp = ((a & 0xffff) * (b & 0xffff));
                 tmp = ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
                 return tmp + c;
             });
@@ -570,25 +664,26 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.mpyh i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => {
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => {
                 var tmp = a >> 16;
-                if ((tmp & 0x8000) != 0)
-                    tmp |= 0xffff0000;
+                var tmp2 = b & 0xffff;
+                var tmp3 = tmp * tmp2;
 
-                var tmp2 = (tmp * b) << 16;
-                tmp2 = ((tmp & 0x8000) != (b & 0x8000)) ? (~tmp2 + 1) : tmp2;
-                return tmp2;
+                tmp3 = ((tmp & 0x8000) != (tmp2 & 0x8000)) ? (~tmp3 + 1) : tmp3;
+                return tmp3 << 16;
             });
 
         }
 
         private void Execute(OpCodes.mpys i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => {
-                var tmp = ((a & 0xffff) * (b & 0xffff)) >> 16;
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => {
+                var tmp = ((a & 0xffff) * (b & 0xffff));
                 tmp = ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
 
-                if (tmp > 0xffff)
+                tmp = tmp >> 16;
+
+                if ((tmp & 0x8000) != 0)
                     return tmp | 0xffff0000;
                 else
                     return tmp;
@@ -597,7 +692,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.mpyhh i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => {
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => {
                 var tmp = ((a >> 16) * (b >> 16));
                 tmp = ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
                 return tmp;
@@ -606,28 +701,28 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.mpyhha i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, t, carry) =>
             {
                 var tmp = ((a >> 16) * (b >> 16));
                 tmp = ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
-                tmp += c;
+                tmp += t;
                 return tmp;
             });
         }
 
         private void Execute(OpCodes.mpyhhu i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => ((a >> 16) * (b >> 16)));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => ((a >> 16) * (b >> 16)));
         }
 
         private void Execute(OpCodes.mpyhhau i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => ((a >> 16) * (b >> 16)) + c);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, t, carry) => ((a >> 16) * (b >> 16)) + t);
         }
 
         private void Execute(OpCodes.clz i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) => {
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => {
                 uint x = 0x80000000;
                 for (int j = 0; j < 32; j++)
                     if ((a & x) != 0)
@@ -641,11 +736,11 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.cntb i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
-                uint x = 0x80000000;
+                uint x = 0x80;
                 uint res = 0;
-                for (int j = 0; j < 32; j++)
+                for (int j = 0; j < 8; j++)
                 {
                     if ((a & x) != 0)
                         res++;
@@ -659,11 +754,11 @@ namespace SPEEmulator
         private void Execute(OpCodes.fsmb i)
         {
             uint pref = m_registers[i.RA].Word;
-            int slot = 0;
+            uint mask = 0x8000;
 
-            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) => {
-                uint res = ((pref >> slot) & 0x1) == 0 ? 0x00u : 0xffu;
-                slot++;
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, null, null, (a, b, c, carry) => {
+                uint res = (pref & mask) == 0 ? 0x00u : 0xffu;
+                mask = mask >> 1;
                 return res;
             });
         }
@@ -671,25 +766,25 @@ namespace SPEEmulator
         private void Execute(OpCodes.fsmh i)
         {
             uint pref = m_registers[i.RA].Word & 0xff;
-            int slot = 0;
+            uint mask = 0x80;
 
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
-                uint res = ((pref >> slot) & 0x1) == 0 ? 0x0000u : 0xffffu;
-                slot++;
+                uint res = (pref & mask) == 0 ? 0x0000u : 0xffffu;
+                mask = mask >> 1;
                 return res;
             });
         }
 
         private void Execute(OpCodes.fsm i)
         {
-            uint pref = m_registers[i.RA].Word & 0xf;
-            int slot = 0;
+            uint pref = m_registers[i.RA].Word & 0x0f;
+            uint mask = 0x08;
 
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
-                uint res = ((pref >> slot) & 0x1) == 0 ? 0x00000000u : 0xffffffffu;
-                slot++;
+                uint res = (pref & mask) == 0 ? 0x00000000u : 0xffffffffu;
+                mask = mask >> 1;
                 return res;
             });
         }
@@ -697,13 +792,13 @@ namespace SPEEmulator
         private void Execute(OpCodes.gbb i)
         {
             uint res = 0;
-            int slot = 0;
+            uint mask = 0x8000;
 
-            ALUByte(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
+            ALUByte(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
                 if ((a & 0x1) != 0)
-                    res |= (1u << slot);
-                slot++;
+                    res |= mask;
+                mask = mask << 1;
                 return 0;
             });
 
@@ -714,13 +809,13 @@ namespace SPEEmulator
         private void Execute(OpCodes.gbh i)
         {
             uint res = 0;
-            int slot = 0;
+            uint mask = 0x80;
 
-            ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
+            ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
                 if ((a & 0x1) != 0)
-                    res |= (1u << slot);
-                slot++;
+                    res |= mask;
+                mask = mask << 1;
                 return 0;
             });
 
@@ -730,13 +825,13 @@ namespace SPEEmulator
         private void Execute(OpCodes.gb i)
         {
             uint res = 0;
-            int slot = 0;
+            uint mask = 0x08;
 
-            ALUWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
+            ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
                 if ((a & 0x1) != 0)
-                    res |= (1u << slot);
-                slot++;
+                    res |= mask;
+                mask = mask << 1;
                 return 0;
             });
 
@@ -745,138 +840,144 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.avgb i)
         {
-            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => ((uint)a + (uint)b + 1u) >> 1);
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => ((uint)a + (uint)b + 1u) >> 1);
         }
 
         private void Execute(OpCodes.absdb i)
         {
-            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => (uint)((b > a) ? b - a : a - b));
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (uint)((b > a) ? b - a : a - b));
         }
 
         private void Execute(OpCodes.sumb i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value,null, (a, b, c, carry) =>
             {
-                uint tmpa = (a & 0xff) + ((a >> 8) & 0xff) + ((a >> 16) & 0xff) + ((a >> 24) & 0xff);
                 uint tmpb = (b & 0xff) + ((b >> 8) & 0xff) + ((b >> 16) & 0xff) + ((b >> 24) & 0xff);
+                uint tmpa = (a & 0xff) + ((a >> 8) & 0xff) + ((a >> 16) & 0xff) + ((a >> 24) & 0xff);
 
-                return (tmpa << 16) | tmpb;
+                return (tmpb << 16) |  tmpa;
             });
         }
 
         private void Execute(OpCodes.xsbh i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a & 0x80) != 0 ? 0xff00 : 0x0000 | (a & 0xff));
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)((a & 0x80) != 0 ? 0xff00 : 0x0000 | (a & 0xff)));
         }
 
         private void Execute(OpCodes.xshw i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a & 0x8000) != 0 ? 0xffff0000 : 0x00000000 | (a & 0xffff));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (a & 0x8000) != 0 ? 0xffff0000 : 0x00000000 | (a & 0xffff));
         }
 
         private void Execute(OpCodes.xswd i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a & 0x80000000) != 0 ? 0xffffffff00000000 : 0x0000000000000000 | (a & 0xffffffffu));
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (a & 0x80000000) != 0 ? 0xffffffff00000000 : 0x0000000000000000 | (a & 0xffffffffu));
         }
     
         private void Execute(OpCodes.and i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => a & b);
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a & b);
         }
 
         private void Execute(OpCodes.andc i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => a & ~b);
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a & ~b);
         }
 
         private void Execute(OpCodes.andbi i)
         {
-            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, new RegisterValue(i.I10 & 0xff), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a & b));
+            uint tmp = (i.I10 & 0xffu);
+            uint bbbb = tmp | (tmp << 8) | (tmp << 16) | (tmp << 24);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a & bbbb));
         }
 
         private void Execute(OpCodes.andhi i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, new RegisterValue((i.I10 & 0x200) != 0 ? 0xfc00 : 0x0000 | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a & b));
+            ushort t = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a & t));
         }
 
         private void Execute(OpCodes.andi i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, new RegisterValue((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000 | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a & b));
+            uint t = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a & t));
         }
 
         private void Execute(OpCodes.or i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => a | b);
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a | b);
         }
 
         private void Execute(OpCodes.orc i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => a | ~b);
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a | ~b);
         }
 
         private void Execute(OpCodes.orbi i)
         {
-            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, new RegisterValue(i.I10 & 0xff), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a | b));
+            uint tmp = (i.I10 & 0xffu);
+            uint bbbb = tmp | (tmp << 8) | (tmp << 16) | (tmp << 24);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a | bbbb));
         }
 
         private void Execute(OpCodes.orhi i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, new RegisterValue((i.I10 & 0x200) != 0 ? 0xfc00 : 0x0000 | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a | b));
+            ushort t = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a | t));
         }
 
         private void Execute(OpCodes.ori i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, new RegisterValue((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000 | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a | b));
+            uint t = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a | t));
         }
 
         private void Execute(OpCodes.orx i)
         {
-            uint res = 0;
-            int slot = 0;
-
-            ALUWord(m_registers[i.RA].Value, m_registers[i.RT].Value, m_registers[i.RT].Value, (a, b, c, carry) =>
-            {
-                res |= ((a & 0xff) | ((a >> 8) & 0xff) | ((a >> 16) & 0xff) | ((a >> 24) & 0xff)) << slot;
-                slot += 8;
-                return 0;
-            });
-
-            m_registers[i.RT].Value = new RegisterValue(res);
+            m_registers[i.RT].Value = new RegisterValue(0);
+            m_registers[i.RT].Value.Value[0] = (byte)(m_registers[i.RA].Value.Value[0] | m_registers[i.RA].Value.Value[4] | m_registers[i.RA].Value.Value[8] | m_registers[i.RA].Value.Value[12]);
+            m_registers[i.RT].Value.Value[1] = (byte)(m_registers[i.RA].Value.Value[1] | m_registers[i.RA].Value.Value[5] | m_registers[i.RA].Value.Value[9] | m_registers[i.RA].Value.Value[13]);
+            m_registers[i.RT].Value.Value[2] = (byte)(m_registers[i.RA].Value.Value[2] | m_registers[i.RA].Value.Value[6] | m_registers[i.RA].Value.Value[10] | m_registers[i.RA].Value.Value[14]);
+            m_registers[i.RT].Value.Value[3] = (byte)(m_registers[i.RA].Value.Value[3] | m_registers[i.RA].Value.Value[7] | m_registers[i.RA].Value.Value[11] | m_registers[i.RA].Value.Value[15]);
         }
 
         private void Execute(OpCodes.xor i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => a ^ b);
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a ^ b);
         }
 
         private void Execute(OpCodes.xorbi i)
         {
-            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, new RegisterValue(i.I10 & 0xff), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a ^ b));
+            uint tmp = (i.I10 & 0xffu);
+            uint bbbb = tmp | (tmp << 8) | (tmp << 16) | (tmp << 24);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a ^ bbbb));
         }
 
         private void Execute(OpCodes.xorhi i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, new RegisterValue((i.I10 & 0x200) != 0 ? 0xfc00 : 0x0000 | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a ^ b));
+            ushort t = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a ^ t));
         }
 
         private void Execute(OpCodes.xori i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, new RegisterValue((i.I10 & 0x200) != 0 ? 0xfffffc00 : 0x00000000 | i.I10), m_registers[i.RT].Value, (a, b, c, carry) => (uint)(a ^ b));
+            uint t = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a ^ t));
         }
 
         private void Execute(OpCodes.nand i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => ~(a & b));
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => ~(a & b));
         }
 
         private void Execute(OpCodes.nor i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => ~(a | b));
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => ~(a | b));
         }
 
         private void Execute(OpCodes.eqv i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => (a ^ (~b)));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (a ^ (~b)));
         }
 
         private void Execute(OpCodes.selb i)
@@ -884,9 +985,261 @@ namespace SPEEmulator
             m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RC].Value, (a, b, c, carry) => ((c & b) | ((~c) & a)));
         }
 
-        /*private void Execute(OpCodes.shufb i)
+        private void Execute(OpCodes.shufb i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c, carry) => );
-        }*/
+            byte[] rconcat = new byte[32];
+            Array.Copy(m_registers[i.RA].Value.Value, rconcat, 16);
+            Array.Copy(m_registers[i.RB].Value.Value, 0, rconcat, 16, 16);
+
+            m_registers[i.RT].Value = ALUByte(null, null, m_registers[i.RC].Value, (a, b, c, carry) =>
+            {
+                if ((c & 0xc0) == 0x80)
+                    return 0x00;
+                else if ((c & 0xe0) == 0xc0)
+                    return 0xff;
+                else if ((c & 0xe0) == 0xe0)
+                    return 0x80;
+                else
+                    return rconcat[c & 0x1f];
+            });
+        }
+
+
+        // Compare Equal To
+        private void Execute(OpCodes.ceq i)
+        {
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a == b ? 0xffffffff : 0x00000000);
+        }
+
+        private void Execute(OpCodes.ceqi i)
+        {
+            uint x = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => a == x ? 0xffffffff : 0x00000000);
+        }
+
+        private void Execute(OpCodes.ceqh i)
+        {
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a == b ? 0xffffu : 0x0000u);
+        }
+
+        private void Execute(OpCodes.ceqhi i)
+        {
+            ushort x = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => a == x ? 0xffffu : 0x0000u);
+        }
+
+        private void Execute(OpCodes.ceqb i)
+        {
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a == b ? 0xffu : 0x00u);
+        }
+
+        private void Execute(OpCodes.ceqbi i)
+        {
+            byte x = (byte)(i.I10 & 0xff);
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, null, null, (a, b, c, carry) => a == x ? 0xffu : 0x00u);
+        }
+
+        // Compare Algebraic Greater Than
+        private void Execute(OpCodes.cgt i)
+        {
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (int)a > (int)b ? 0xffffffff : 0x00000000);
+        }
+
+        private void Execute(OpCodes.cgti i)
+        {
+            uint x = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (int)a > (int)x ? 0xffffffff : 0x00000000);
+        }
+
+        private void Execute(OpCodes.cgth i)
+        {
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (short)a > (short)b ? 0xffffu : 0x0000u);
+        }
+
+        private void Execute(OpCodes.cgthi i)
+        {
+            ushort x = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (short)a > (short)x ? 0xffffu : 0x0000u);
+        }
+
+        private void Execute(OpCodes.cgtb i)
+        {
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (int)(a << 8) > (int)(b << 8) ? 0xffu : 0x00u);
+        }
+
+        private void Execute(OpCodes.cgtbi i)
+        {
+            byte x = (byte)(i.I10 & 0xff);
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (int)(a << 8) > (int)(x << 8) ? 0xffu : 0x00u);
+        }
+
+
+        // Compare Logical Greater Than
+        private void Execute(OpCodes.clgt i)
+        {
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a > b ? 0xffffffff : 0x00000000);
+        }
+
+        private void Execute(OpCodes.clgti i)
+        {
+            uint x = RepLeftBit(i, 0);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => a > x ? 0xffffffff : 0x00000000);
+        }
+
+        private void Execute(OpCodes.clgth i)
+        {
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a > b ? 0xffffu : 0x0000u);
+        }
+
+        private void Execute(OpCodes.clgthi i)
+        {
+            ushort x = (ushort)(RepLeftBit(i, 0) & 0xffff);
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => a > x ? 0xffffu : 0x0000u);
+        }
+
+        private void Execute(OpCodes.clgtb i)
+        {
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => a > b ? 0xffu : 0x00u);
+        }
+
+        private void Execute(OpCodes.clgtbi i)
+        {
+            byte x = (byte)(i.I10 & 0xff);
+            m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, null, null, (a, b, c, carry) => a > x ? 0xffu : 0x00u);
+        }
+
+        private void Execute(OpCodes.br i)
+        {
+            this.PC = ((this.PC - 4) + RepLeftBit(i, 2)) & m_spe.LSLR;
+        }
+
+        private void Execute(OpCodes.brz i)
+        {
+            if (m_registers[i.RT].Word == 0)
+                this.PC = ((this.PC - 4) + RepLeftBit(i, 2)) & m_spe.LSLR & 0xFFFFFFFC;
+            else
+                this.PC = this.PC & m_spe.LSLR;
+        }
+
+        private void Execute(OpCodes.brhz i)
+        {
+            if (m_registers[i.RT].Halfword == 0)
+                this.PC = ((this.PC - 4) + (RepLeftBit(i, 2) & 0xffff)) & m_spe.LSLR & 0xFFFFFFFC;
+            else
+                this.PC = this.PC & m_spe.LSLR;
+        }
+
+        private void Execute(OpCodes.brnz i)
+        {
+            if (m_registers[i.RT].Word != 0)
+                this.PC = ((this.PC - 4) + RepLeftBit(i, 2)) & m_spe.LSLR & 0xFFFFFFFC;
+            else
+                this.PC = this.PC & m_spe.LSLR;
+        }
+
+        private void Execute(OpCodes.brhnz i)
+        {
+            if (m_registers[i.RT].Halfword != 0)
+                this.PC = ((this.PC - 4) + (RepLeftBit(i, 2) & 0xffff)) & m_spe.LSLR & 0xFFFFFFFC;
+            else
+                this.PC = this.PC & m_spe.LSLR;
+        }
+        
+        /// <summary>
+        ///  This instruction has no effect on the execution of the program. It exists to provide implementation-defined control of instruction issuance. RT 
+        ///  is a false target. Implementations can schedule instructions as though this instruction produces a value into RT. Programs can avoid unnecessary 
+        ///  delay by programming RT so as not to appear to source data for nearby subsequent instructions. False targets are not written.
+        /// </summary>
+        /// <param name="i"></param>
+        private void Execute(OpCodes.nop i) {}
+
+        /// <summary>
+        /// This instruction has no effect on the execution of the program. It exists to provide implementation-defined control of instruction issuance.
+        /// </summary>
+        /// <param name="i"></param>
+        private void Execute(OpCodes.lnop i) {}
+
+        /// <summary>
+        /// This instruction has no effect on the execution of the program other than to cause the processor to wait until all pending store instructions have 
+        /// completed before fetching the next sequential instruction. This instruction must be used following a store instruction that modifies the instruction 
+        /// stream.
+        /// The C feature bit causes channel synchronization to occur before instruction synchronization occurs. Channel synchronization allows an SPU state 
+        /// modified through channel instructions to affect execution.
+        /// </summary>
+        /// <param name="i"></param>
+        private void Execute(OpCodes.sync i) {}
+
+        /// <summary>
+        /// Execution of the program in the SPU stops, and the external environment is signaled. No further instructions are executed.
+        /// </summary>
+        /// <param name="i"></param>
+        private void Execute(OpCodes.stop i)
+        {
+            this.PC = (PC - 4) & m_spe.LSLR;
+            this.m_doRun = false;
+        }
+
+        /// <summary>
+        /// Execution of the program in the SPU stops.
+        /// </summary>
+        /// <param name="i"></param>
+        private void Execute(OpCodes.stopd i)
+        {
+            this.PC = (PC - 4) & m_spe.LSLR;
+            this.m_doRun = false;
+        }
+
+        private void Execute(OpCodes.brsl i)
+        {
+            m_registers[i.RT].Value = new RegisterValue(0);
+            m_registers[i.RT].Word = this.PC & m_spe.LSLR;
+            this.PC = (uint)((this.PC - 4) + (int)RepLeftBit(i, 2)) & m_spe.LSLR;
+        }
+
+
+        private void Execute(OpCodes.hbrr i) { }
+
+        private void Execute(OpCodes.rotqbyi i) 
+        {
+            uint count = i.I7 & 0x0f;
+            if (count == 0)
+            {
+                m_registers[i.RT].Value = new RegisterValue(m_registers[i.RA].Value.high, m_registers[i.RA].Value.low);
+            }
+            else
+            {
+                RegisterValue tmp = new RegisterValue(0);
+
+                uint byteShift = count / 8;
+                uint bitShift = count % 8;
+
+                int leftShiftMask = (1 << (int)(bitShift + 1)) - 1;
+                int rightShiftMask = ~leftShiftMask;
+
+                for (int j = 0; j < 15; j++)
+                    tmp.Value[j] = (byte)(((m_registers[i.RA].Value.Value[(j + byteShift) % 16] & leftShiftMask) << (int)(8 - bitShift)) | ((m_registers[i.RA].Value.Value[(j + byteShift + 1) % 16] & rightShiftMask) >> (int)bitShift));
+
+                m_registers[i.RT].Value = tmp;
+            }
+        }
+
+        //Not yet reviewed!!!
+        private void Execute(OpCodes.bi i)
+        {
+            //TODO: Do we need the interups?
+            this.PC = m_registers[i.RA].Word & m_spe.LSLR & 0xfffffffc;
+        }
+
+        //Not yet reviewed!!!
+        private void Execute(OpCodes.bisl i)
+        {
+            //TODO: Do we need the interups?
+            uint t = m_registers[i.RA].Word & m_spe.LSLR & 0xfffffffc;
+            uint u = m_spe.LSLR & this.PC;
+
+            m_registers[i.RT].Value = new RegisterValue(0);
+            m_registers[i.RT].Word = u;
+            this.PC = t;
+        }
     }
 }

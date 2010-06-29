@@ -51,5 +51,11 @@ namespace SPEEmulator.OpCodes.Bases
                     m_value &= ~0x80000u;
             }
         }
+
+        public override string ToString()
+        {
+            return Mnemonic.ToString() + " " + RA.ToString() + " " + RT.ToString();
+        }
+
     }
 }
