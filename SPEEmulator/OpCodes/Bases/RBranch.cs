@@ -77,6 +77,10 @@ namespace SPEEmulator.OpCodes.Bases
                 ROH = (value >> REGISTER_SIZE) & 0x3f;
             }
         }
-        
+
+        public override string ToString()
+        {
+            return Mnemonic.ToString() + ", ROH: " + ROH.ToString() + "(" + ((int)ROH).ToString() + "), I16: " + I16.ToString() + "(" + ((int)I16).ToString() + "), ROL: " + ROL.ToString() + "(" + ((int)ROL).ToString() + "), RO: " + RO.ToString() + "(" + ((int)RO).ToString() + ")";
+        }
     }
 }

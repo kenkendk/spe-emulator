@@ -33,5 +33,10 @@ namespace SPEEmulator.OpCodes.Bases
                 m_value |= (value & 0xffff) << REGISTER_SIZE;
             }
         }
+
+        public override string ToString()
+        {
+            return base.ToString() + ", I16: " + I16.ToString() + "(" + ((short)I16).ToString() + ")";
+        }
     }
 }

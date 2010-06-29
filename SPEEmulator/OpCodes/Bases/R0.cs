@@ -45,5 +45,10 @@ namespace SPEEmulator.OpCodes.Bases
                 m_value |= value & REGISTER_MASK;
             }
         }
+
+        public override string ToString()
+        {
+            return base.ToString() + ", RT: " + RT.ToString() + " (" + ((int)RT).ToString() + ")";
+        }
     }
 }

@@ -925,5 +925,10 @@ namespace SPEEmulator.OpCodes.Bases
         {
             return ParsePattern(new string('1', value.Replace(" ", "").Length));
         }
+
+        public override string ToString()
+        {
+            return Mnemonic.ToString();
+        }
     }
 }

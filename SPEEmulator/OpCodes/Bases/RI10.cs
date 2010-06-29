@@ -34,5 +34,9 @@ namespace SPEEmulator.OpCodes.Bases
             }
         }
 
+        public override string ToString()
+        {
+            return base.ToString() + ", I10: " + I10.ToString() + "(" + ((int)I10).ToString() + ")";
+        }
     }
 }
