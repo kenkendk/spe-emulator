@@ -1059,7 +1059,32 @@ namespace SPEEmulator
             m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => a << (int)shift);
         }
 
-        // Missing....
+        /*
+        private void Execute(OpCodes.shlqbi i)
+        {
+        }
+
+        private void Execute(OpCodes.shlqbii i)
+        {
+        }
+         */
+
+        private void Execute(OpCodes.shlqby i)
+        {
+            uint s = m_registers[i.RB].Word & 0xf;
+
+            RegisterValue tmp = new RegisterValue(0);
+
+            for (int b = 0; b < 15; b++)
+                if (b + s < 16)
+                    tmp.Value[b] = m_registers[i.RA].Value.Value[b + s];
+                else
+                    tmp.Value[b] = 0;
+
+            m_registers[i.RT].Value = tmp;
+
+            throw new Exception("Not reviewed");
+        }
 
         private void Execute(OpCodes.shlqbyi i)
         {
@@ -1076,7 +1101,41 @@ namespace SPEEmulator
             m_registers[i.RT].Value = tmp;
         }
 
-        // Missing....
+        private void Execute(OpCodes.shlqbybi i)
+        {
+            uint s = m_registers[i.RB].Word & 0xf8;
+
+            RegisterValue tmp = new RegisterValue(0);
+
+            for (int b = 0; b < 15; b++)
+                if (b + s < 16)
+                    tmp.Value[b] = m_registers[i.RA].Value.Value[b + s];
+                else
+                    tmp.Value[b] = 0;
+
+            m_registers[i.RT].Value = tmp;
+
+            throw new Exception("Not reviewed");
+        }
+
+        /*
+        private void Execute(OpCodes.roth i)
+        {
+        }
+
+        private void Execute(OpCodes.rothi i)
+        {
+        }
+
+        private void Execute(OpCodes.rot i)
+        {
+        }
+
+        private void Execute(OpCodes.roti i)
+        {
+        }
+         */ 
+        
 
         private void Execute(OpCodes.rotqby i)
         {
@@ -1117,8 +1176,71 @@ namespace SPEEmulator
                 m_registers[i.RT].Value = tmp;
             }
         }
+        /*
+        private void Execute(OpCodes.rotqbybi i)
+        {
+        }
 
-        // Missing....
+        private void Execute(OpCodes.rotqbi i)
+        {
+        }
+
+        private void Execute(OpCodes.rotqbii i)
+        {
+        }
+
+        private void Execute(OpCodes.rothm i)
+        {
+        }
+
+        private void Execute(OpCodes.rothmi i)
+        {
+        }
+
+        private void Execute(OpCodes.rotm i)
+        {
+        }
+
+        private void Execute(OpCodes.rotmi i)
+        {
+        }
+
+        private void Execute(OpCodes.rotqmby i)
+        {
+        }
+
+        private void Execute(OpCodes.rotqmbyi i)
+        {
+        }
+
+        private void Execute(OpCodes.rotqmbybi i)
+        {
+        }
+
+        private void Execute(OpCodes.rotqmbi i)
+        {
+        }
+
+        private void Execute(OpCodes.rotqmbii i)
+        {
+        }
+
+        private void Execute(OpCodes.rotmah i)
+        {
+        }
+
+        private void Execute(OpCodes.rotmahi i)
+        {
+        }
+
+        private void Execute(OpCodes.rotma i)
+        {
+        }
+
+        private void Execute(OpCodes.rotmai i)
+        {
+        }
+        */
 
         /*private void Execute(OpCodes.rotqbyi i) 
         {
@@ -1147,6 +1269,31 @@ namespace SPEEmulator
         #endregion
 
         #region Compare, Branch, and Halt Instructions
+        /*
+        private void Execute(OpCodes.heq i)
+        {
+        }
+
+        private void Execute(OpCodes.heqi i)
+        {
+        }
+
+        private void Execute(OpCodes.hgt i)
+        {
+        }
+
+        private void Execute(OpCodes.hgti i)
+        {
+        }
+
+        private void Execute(OpCodes.hlgt i)
+        {
+        }
+
+        private void Execute(OpCodes.hlgti i)
+        {
+        }
+        */
 
         private void Execute(OpCodes.ceqb i)
         {
@@ -1435,6 +1582,140 @@ namespace SPEEmulator
         #endregion
 
         #region Floating-Point Instructions
+        /*
+        private void Execute(OpCodes.fa i)
+        {
+        }
+
+        private void Execute(OpCodes.dfa i)
+        {
+        }
+
+        private void Execute(OpCodes.fs i)
+        {
+        }
+
+        private void Execute(OpCodes.dfs i)
+        {
+        }
+
+        private void Execute(OpCodes.fm i)
+        {
+        }
+
+        private void Execute(OpCodes.dfm i)
+        {
+        }
+
+        private void Execute(OpCodes.fma i)
+        {
+        }
+
+        private void Execute(OpCodes.dfma i)
+        {
+        }
+
+        private void Execute(OpCodes.fnms i)
+        {
+        }
+
+        private void Execute(OpCodes.dfnms i)
+        {
+        }
+
+        private void Execute(OpCodes.fms i)
+        {
+        }
+
+        private void Execute(OpCodes.dfms i)
+        {
+        }
+
+        private void Execute(OpCodes.dfnma i)
+        {
+        }
+
+        private void Execute(OpCodes.frest i)
+        {
+        }
+
+        private void Execute(OpCodes.frsqest i)
+        {
+        }
+
+        private void Execute(OpCodes.fi i)
+        {
+        }
+
+        private void Execute(OpCodes.csflt i)
+        {
+        }
+
+        private void Execute(OpCodes.cflts i)
+        {
+        }
+
+        private void Execute(OpCodes.cuflt i)
+        {
+        }
+
+        private void Execute(OpCodes.cfltu i)
+        {
+        }
+
+        private void Execute(OpCodes.frds i)
+        {
+        }
+
+        private void Execute(OpCodes.fesd i)
+        {
+        }
+
+        private void Execute(OpCodes.dfceq i)
+        {
+        }
+
+        private void Execute(OpCodes.dfcmeq i)
+        {
+        }
+
+        private void Execute(OpCodes.dfcgt i)
+        {
+        }
+
+        private void Execute(OpCodes.dfcmgt i)
+        {
+        }
+
+        private void Execute(OpCodes.dftsv i)
+        {
+        }
+
+        private void Execute(OpCodes.fceq i)
+        {
+        }
+
+        private void Execute(OpCodes.fcmeq i)
+        {
+        }
+
+        private void Execute(OpCodes.fcgt i)
+        {
+        }
+
+        private void Execute(OpCodes.fcmgt i)
+        {
+        }
+
+        private void Execute(OpCodes.fscrwr i)
+        {
+        }
+
+        private void Execute(OpCodes.fscrrd i)
+        {
+        }
+        */
+
         #endregion
 
         #region Control Instructions
@@ -1492,9 +1773,34 @@ namespace SPEEmulator
         /// <param name="i"></param>
         private void Execute(OpCodes.dsync i) { }
 
+        /*
+        private void Execute(OpCodes.mfspr i)
+        {
+        }
+
+        private void Execute(OpCodes.mtspr i)
+        {
+        }
+        */
+
         #endregion
 
         #region Channel Instructions
+
+        /*
+        private void Execute(OpCodes.rdch i)
+        {
+        }
+
+        private void Execute(OpCodes.rchcnt i)
+        {
+        }
+
+        private void Execute(OpCodes.wrch i)
+        {
+        }
+        */
+
         #endregion
     }
 }
