@@ -168,7 +168,7 @@ namespace SPEEmulator
         /// <summary>
         /// Gets the Local Storage Limit Register value
         /// </summary>
-        public uint LSLR { get { return (0x8000 << 1) - 1; } } //TODO: Calculate using m_ls.Length
+        public uint LSLR { get { return /*(0x8000 << 1) - 1;*/ 0xffffffffu; } } //TODO: Calculate using m_ls.Length
 
         /// <summary>
         /// Gets the SPU instance
