@@ -80,7 +80,7 @@ namespace SPEEmulator.OpCodes.Bases
 
         public override string ToString()
         {
-            return Mnemonic.ToString() + ", ROH: " + ROH.ToString() + "(" + ((int)ROH).ToString() + "), I16: " + I16.ToString() + "(" + ((int)I16).ToString() + "), ROL: " + ROL.ToString() + "(" + ((int)ROL).ToString() + "), RO: " + RO.ToString() + "(" + ((int)RO).ToString() + ")";
+            return Mnemonic.ToString() + ", I16=" + I16.ToString() + " (" + ((int)I16).ToString() + "), RO: " + RO.ToString() + "(" + ((int)RO).ToString() + ")";
         }
     }
 }

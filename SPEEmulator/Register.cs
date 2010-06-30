@@ -163,7 +163,7 @@ namespace SPEEmulator
 
         public override string ToString()
         {
-            return string.Format("0x{0:x[4]}{1:x[4]}", high, low);
+            return string.Format("0x{0:x8}{1:x8}", high, low);
         }
 
         public override bool Equals(object obj)

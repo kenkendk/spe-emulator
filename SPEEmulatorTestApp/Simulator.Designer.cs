@@ -56,6 +56,8 @@
             this.FilenamePanel = new System.Windows.Forms.Panel();
             this.SimulationButtonPanel = new System.Windows.Forms.Panel();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            this.DisassembleElf = new System.Windows.Forms.Button();
+            this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
             ((System.ComponentModel.ISupportInitialize)(this.OutMboxValue)).BeginInit();
             this.SimulationControls.SuspendLayout();
             this.CILBrowsePanel.SuspendLayout();
@@ -69,7 +71,7 @@
             this.ELFFilename.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ELFFilename.Location = new System.Drawing.Point(0, 0);
             this.ELFFilename.Name = "ELFFilename";
-            this.ELFFilename.Size = new System.Drawing.Size(285, 20);
+            this.ELFFilename.Size = new System.Drawing.Size(208, 20);
             this.ELFFilename.TabIndex = 1;
             this.ELFFilename.Text = "..\\..\\..\\test-apps\\fac-asm";
             // 
@@ -336,6 +338,7 @@
             this.ELFBrowsePanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.ELFBrowsePanel.Controls.Add(this.ELFFilename);
+            this.ELFBrowsePanel.Controls.Add(this.DisassembleElf);
             this.ELFBrowsePanel.Controls.Add(this.BrowseELFFile);
             this.ELFBrowsePanel.Location = new System.Drawing.Point(96, 0);
             this.ELFBrowsePanel.Name = "ELFBrowsePanel";
@@ -367,6 +370,23 @@
             // openFileDialog
             // 
             this.openFileDialog.FileName = "openFileDialog1";
+            // 
+            // DisassembleElf
+            // 
+            this.DisassembleElf.Dock = System.Windows.Forms.DockStyle.Right;
+            this.DisassembleElf.Location = new System.Drawing.Point(208, 0);
+            this.DisassembleElf.Name = "DisassembleElf";
+            this.DisassembleElf.Size = new System.Drawing.Size(77, 20);
+            this.DisassembleElf.TabIndex = 3;
+            this.DisassembleElf.Text = "Disassemble";
+            this.DisassembleElf.UseVisualStyleBackColor = true;
+            this.DisassembleElf.Click += new System.EventHandler(this.DisassembleElf_Click);
+            // 
+            // saveFileDialog
+            // 
+            this.saveFileDialog.DefaultExt = "s";
+            this.saveFileDialog.Filter = "Assembly files (*.s, *.asm)|*.s;*.asm|All files (*.*)|*.*";
+            this.saveFileDialog.Title = "Selft file to save disassembly in";
             // 
             // Simulator
             // 
@@ -423,6 +443,8 @@
         private System.Windows.Forms.Panel FilenamePanel;
         private System.Windows.Forms.Panel SimulationButtonPanel;
         private System.Windows.Forms.OpenFileDialog openFileDialog;
+        private System.Windows.Forms.Button DisassembleElf;
+        private System.Windows.Forms.SaveFileDialog saveFileDialog;
     }
 }
 
