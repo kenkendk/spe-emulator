@@ -31,7 +31,8 @@ output:
 .global main
 .type main,@function
 main:
-	#PROLOGUE#
+    # instruction @352
+	#PROLOGUE# 
 	stqd $lr, LR_OFFSET($sp)
 	stqd $sp, -MAIN_FRAME_SIZE($sp)
 	ai $sp, $sp, -MAIN_FRAME_SIZE

@@ -54,7 +54,7 @@ namespace SPEEmulator.OpCodes.Bases
 
         public override string ToString()
         {
-            return Mnemonic.ToString() + " " + RA.ToString() + " " + RT.ToString();
+            return base.ToString() + ", D: " + (D ? "true" : "false")  + ", E: " + (E ? "true" : "false");
         }
 
     }
