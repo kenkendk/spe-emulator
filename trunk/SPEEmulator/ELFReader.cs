@@ -11,8 +11,6 @@ namespace SPEEmulator
     {
         private static readonly byte[] MAGIC_HEADER = new byte[] { 0x7f, (byte)'E', (byte)'L', (byte)'F' };
 
-        private Stream m_stream;
-
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct ELF32Header
         {
@@ -68,6 +66,9 @@ namespace SPEEmulator
             public byte info;
             public byte other;
             public ushort shndx;
+
+            public st_type Type { get { return (st_type)(info & 0x0f); } }
+            public st_bind Bind { get { return (st_bind)(info >> 4); } }
         }
 
 
@@ -84,12 +85,34 @@ namespace SPEEmulator
             public uint align;
         }
 
-        private T ReadStruct<T>()
+        public enum st_type : byte
+        {
+            notype = 0,
+            @object = 1,
+            func = 2,
+            section = 3,
+            file = 4,
+            loproc = 13,
+            medproc = 14,
+            hiproc = 15
+        }
+
+        public enum st_bind : byte
+        {
+            local = 0,
+            global = 1,
+            weak = 2,
+            loproc = 13,
+            medproc = 14,
+            hiproc = 15
+        }
+
+        private static T ReadStruct<T>(Stream s)
         {
             GCHandle handle = new GCHandle();
             try
             {
-                handle = GCHandle.Alloc(ReadBlock(Marshal.SizeOf(typeof(T))), GCHandleType.Pinned);
+                handle = GCHandle.Alloc(ReadBlock(s, Marshal.SizeOf(typeof(T))), GCHandleType.Pinned);
                 return (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
             }
             finally
@@ -99,13 +122,13 @@ namespace SPEEmulator
             }
         }
 
-        private byte[] ReadBlock(int size)
+        private static byte[] ReadBlock(Stream s, int size)
         {
             byte[] tmp = new byte[size];
             int read = 0;
             int a;
             while (read < size)
-                if ((a = m_stream.Read(tmp, read, size - read)) == 0)
+                if ((a = s.Read(tmp, read, size - read)) == 0)
                     throw new InvalidDataException("Premature EOF");
                 else
                     read += a;
@@ -119,11 +142,13 @@ namespace SPEEmulator
         
         private byte[][] m_programsections;
         private byte[][] m_sectionsections;
+        private SymbolTableEntry[] m_symbols;
+        private int m_stringtableindex = -1;
+        private int m_symboltableindex = -1;
 
         public ELFReader(Stream s)
         {
-            m_stream = s;
-            m_header = ReadStruct<ELF32Header>();
+            m_header = ReadStruct<ELF32Header>(s);
 
             if (m_header.magic1 != MAGIC_HEADER[0] || m_header.magic2 != MAGIC_HEADER[1] || m_header.magic3 != MAGIC_HEADER[2] || m_header.magic4 != MAGIC_HEADER[3])
                 throw new InvalidDataException("Invalid ELF magic header");
@@ -149,8 +174,8 @@ namespace SPEEmulator
             m_progheaders = new ProgramHeader[m_header.phnum];
             for (int i = 0; i < m_progheaders.Length; i++)
             {
-                m_stream.Seek(m_header.phoff + (i * m_header.phentsize), SeekOrigin.Begin);
-                m_progheaders[i] = ReadStruct<ProgramHeader>();
+                s.Seek(m_header.phoff + (i * m_header.phentsize), SeekOrigin.Begin);
+                m_progheaders[i] = ReadStruct<ProgramHeader>(s);
                 if (convertEndian)
                     m_progheaders[i] = FixEndian(m_progheaders[i]);
             }
@@ -158,8 +183,8 @@ namespace SPEEmulator
             m_sectionheaders = new SectionHeader[m_header.shnum];
             for (int i = 0; i < m_sectionheaders.Length; i++)
             {
-                m_stream.Seek(m_header.shoff + (i * m_header.shentsize), SeekOrigin.Begin);
-                m_sectionheaders[i] = ReadStruct<SectionHeader>();
+                s.Seek(m_header.shoff + (i * m_header.shentsize), SeekOrigin.Begin);
+                m_sectionheaders[i] = ReadStruct<SectionHeader>(s);
                 if (convertEndian)
                     m_sectionheaders[i] = FixEndian(m_sectionheaders[i]);
             }
@@ -167,17 +192,93 @@ namespace SPEEmulator
             m_programsections = new byte[m_progheaders.Length][];
             for (int i = 0; i < m_programsections.Length; i++)
             {
-                m_stream.Seek(m_progheaders[i].offset, SeekOrigin.Begin);
-                m_programsections[i] = ReadBlock((int)m_progheaders[i].filesz);
+                s.Seek(m_progheaders[i].offset, SeekOrigin.Begin);
+                m_programsections[i] = ReadBlock(s, (int)m_progheaders[i].filesz);
             }
 
             m_sectionsections = new byte[m_sectionheaders.Length][];
             for (int i = 0; i < m_sectionheaders.Length; i++)
             {
-                m_stream.Seek(m_sectionheaders[i].offset, SeekOrigin.Begin);
-                m_sectionsections[i] = ReadBlock((int)m_sectionheaders[i].size);
+                s.Seek(m_sectionheaders[i].offset, SeekOrigin.Begin);
+                m_sectionsections[i] = ReadBlock(s, (int)m_sectionheaders[i].size);
+
+                if (m_sectionheaders[i].type == 0x3)
+                    m_stringtableindex = i;
+                else if (m_sectionheaders[i].type == 0x2)
+                    m_symboltableindex = i;
             }
-           
+
+            if (m_symboltableindex >= 0)
+            {
+                int size = Marshal.SizeOf(typeof(SymbolTableEntry));
+                int count = (int)m_sectionheaders[m_symboltableindex].size / size;
+                m_symbols = new SymbolTableEntry[count];
+                using (MemoryStream ms = new MemoryStream(m_sectionsections[m_symboltableindex]))
+                    for (int i = 0; i < count; i++)
+                    {
+                        m_symbols[i] = ReadStruct<SymbolTableEntry>(ms);
+                        if (convertEndian)
+                            m_symbols[i] = FixEndian(m_symbols[i]);
+                    }
+            }
+        }
+
+        private string FindString(uint index)
+        {
+            if (m_stringtableindex < 0)
+                return "";
+            StringBuilder sb = new StringBuilder();
+            while (index < m_sectionsections[m_stringtableindex].Length && m_sectionsections[m_stringtableindex][index] != 0)
+                sb.Append((char)m_sectionsections[m_stringtableindex][index++]);
+            
+            return sb.ToString();
+        }
+
+        public void Disassemble(Stream output)
+        {
+            System.IO.StreamWriter sw = null;
+            try
+            {
+                OpCodes.OpCodeParser parser = new OpCodes.OpCodeParser();
+
+                List<SymbolTableEntry> functions = m_symbols.Where(x => x.Type == st_type.func && x.Bind == st_bind.global).ToList();
+                List<SymbolTableEntry> labels = m_symbols.Where(x => x.Type == st_type.notype && x.Bind == st_bind.local).ToList();
+
+                sw = new StreamWriter(output);
+                for(int i = 0; i < m_progheaders.Length; i++)
+                    if (m_progheaders[i].type == 1 && (m_progheaders[i].flags & 0x1) == 1) //Load and execute
+                    {
+                        sw.WriteLine("# Program section {0} at virtual offset {1}, file offset {2}", i, m_progheaders[i].vaddr, m_progheaders[i].offset);
+                        sw.WriteLine();
+
+                        for (int j = 0; j < m_progheaders[i].memsz; j += 4)
+                        {
+                            try
+                            {
+                                foreach (var v in functions.FindAll(x => (x.value + x.size) == (uint)j && x.size > 0))
+                                    sw.WriteLine("#END ." + FindString(v.name));
+
+                                foreach (var v in functions.FindAll(x => x.value == (uint)j))
+                                    sw.WriteLine("." + FindString(v.name));
+
+                                foreach (var v in labels.FindAll(x => x.value == (uint)j))
+                                    sw.WriteLine(FindString(v.name) + ":");
+
+                                OpCodes.Bases.Instruction op = parser.FindCode(m_programsections[i], (uint)j);
+                                sw.WriteLine("{0:x4}: {1}", j, op.ToString());
+                            }
+                            catch
+                            {
+                                sw.WriteLine("{0:x4}: Unrecognized instruction {1:x2}{2:x2}{3:x2}{4:x2}", j, m_programsections[i][j], m_programsections[i][j + 1], m_programsections[i][j + 2], m_programsections[i][j + 3]);
+                            }
+                        }
+                    }
+            }
+            finally
+            {
+                if (sw != null)
+                    sw.Flush();
+            }
         }
 
         public void SetupExecutionEnv(SPEProcessor spe)

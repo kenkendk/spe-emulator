@@ -36,7 +36,7 @@ namespace SPEEmulator.OpCodes.Bases
 
         public override string ToString()
         {
-            return base.ToString() + ", I18: " + I18.ToString() + "(" + ((int)I18).ToString() + ")";
+            return base.ToString() + ", I18=" + I18.ToString() + " (" + ((int)(((I18 & 0x20000) != 0 ? 0xfffc0000 : 0x00000000) | I18)).ToString() + ")";
         }
     }
 }

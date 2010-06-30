@@ -189,5 +189,36 @@ namespace SPEEmulatorTestApp
                 SPEMboxWritten(m_spe);
             }
         }
+
+        private void DisassembleElf_Click(object sender, EventArgs e)
+        {
+            if (saveFileDialog.ShowDialog(this) == System.Windows.Forms.DialogResult.OK)
+            {
+                try
+                {
+                    using (System.IO.FileStream fs = System.IO.File.OpenRead(ELFFilename.Text))
+                    {
+                        SPEEmulator.ELFReader r = new SPEEmulator.ELFReader(fs);
+
+                        try
+                        {
+                            using (System.IO.FileStream fso = System.IO.File.Create(saveFileDialog.FileName))
+                                r.Disassemble(fso);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(this, string.Format("Unable to save file: {0}", ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, string.Format("Unable to load file: {0}", ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+
+        }
     }
 }

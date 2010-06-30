@@ -123,8 +123,7 @@ namespace SPEEmulator
                 throw new Exception("Could not open/load ProgramOpCodes.txt");
             }
 
-            //PC = 0;
-
+            //TODO: This seems to be handled by the loader in an ELF
             m_registers[1].Word = 0x3ffd0; //TODO: Must follow configureable LS size
 
             m_registers[3].Word = 0x0a0a0a0; //spu-id
@@ -139,14 +138,7 @@ namespace SPEEmulator
             {
                 try
                 {
-                    uint opcode =
-                        (uint)(m_spe.LS[PC] << (8 * 3)) |
-                        ((uint)m_spe.LS[PC + 1] << (8 * 2)) |
-                        ((uint)m_spe.LS[PC + 2] << (8 * 1)) |
-                        ((uint)m_spe.LS[PC + 3] << (8 * 0))
-                        ;
-
-                    SPEEmulator.OpCodes.Bases.Instruction op = m_parser.FindCode(opcode);
+                    SPEEmulator.OpCodes.Bases.Instruction op = m_parser.FindCode(m_spe.LS, PC);
 
                     if (textFile != null)
                         textFile.Write(PC + ": " + op.ToString());
@@ -202,6 +194,17 @@ namespace SPEEmulator
         private uint RepLeftBit(OpCodes.Bases.RI7 x, int shift)
         {
             return (((x.I7 & 0x40) != 0 ? 0xffffff80 : 0x00000000) | x.I7) << shift;
+        }
+
+        /// <summary>
+        /// Expands an immediate value to 32 bits
+        /// </summary>
+        /// <param name="x">The instruction with the immediate value to expand</param>
+        /// <param name="shift">The number of bits the value is shifted left</param>
+        /// <returns>The 32bit sign extended value as an unsigned int</returns>
+        private uint RepLeftBit(OpCodes.Bases.RI8 x, int shift)
+        {
+            return (((x.I8 & 0x80) != 0 ? 0xffffff00 : 0x00000000) | x.I8) << shift;
         }
 
         /// <summary>
