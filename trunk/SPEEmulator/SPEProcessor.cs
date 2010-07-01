@@ -21,7 +21,8 @@ namespace SPEEmulator
         ReadCodeArea,
         WriteCodeArea,
         ExecuteDataArea,
-        UnalignedPC
+        UnalignedPC,
+        BreakPointHit
     }
 
     /// <summary>
@@ -211,7 +212,7 @@ namespace SPEEmulator
         /// <summary>
         /// Gets the Local Storage Limit Register value
         /// </summary>
-        public uint LSLR { get { return (uint)((m_ls.Length << 1) - 1); } }
+        public uint LSLR { get { return (uint)(m_ls.Length - 1); } }
 
         /// <summary>
         /// Gets the SPU instance
@@ -394,7 +395,53 @@ namespace SPEEmulator
             }
         }
 
+        /// <summary>
+        /// Reads the word value from LS, starting at the specified offset
+        /// </summary>
+        /// <param name="offset">The starting offset</param>
+        /// <returns>The word value read</returns>
+        public uint ReadLSWord(uint offset)
+        {
+            return
+                (uint)(LS[offset] << (8 * 3)) |
+                ((uint)LS[offset + 1] << (8 * 2)) |
+                ((uint)LS[offset + 2] << (8 * 1)) |
+                ((uint)LS[offset + 3] << (8 * 0));
+        }
 
+        /// <summary>
+        /// Reads a zero terminated string from LS
+        /// </summary>
+        /// <param name="offset">The offset to start reading</param>
+        /// <returns>The string read</returns>
+        public string ReadLSString(uint offset)
+        {
+            StringBuilder sb = new StringBuilder();
+            while (m_ls[offset] != 0)
+                sb.Append((char)m_ls[offset++]);
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Reads a double value from LS
+        /// </summary>
+        /// <param name="offset">The offset to start reading from</param>
+        /// <returns>The double read</returns>
+        public double ReadLSDouble(uint offset)
+        {
+            return BitConverter.ToDouble(m_ls, (int)offset);
+        }
+
+        /// <summary>
+        /// Reads a double value from LS
+        /// </summary>
+        /// <param name="offset">The offset to start reading from</param>
+        /// <returns>The double read</returns>
+        public double ReadLSFloat(uint offset)
+        {
+            return BitConverter.ToSingle(m_ls, (int)offset);
+        }
         #endregion
 
         #region Private methods

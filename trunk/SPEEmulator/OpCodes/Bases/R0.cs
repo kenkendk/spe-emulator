@@ -48,7 +48,7 @@ namespace SPEEmulator.OpCodes.Bases
 
         public override string ToString()
         {
-            return base.ToString() + ", $" + RT.ToString();
+            return base.ToString() + " $" + RT.ToString();
         }
     }
 }

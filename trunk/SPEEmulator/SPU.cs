@@ -79,6 +79,7 @@ namespace SPEEmulator
         private Register[] m_registers;
         private Register m_SRR0 = null;
         private Register m_SA = null;
+        private uint[] m_breakpoints = new uint[0];
 
         private uint m_pc;
         private volatile bool m_doRun = true;
@@ -119,7 +120,16 @@ namespace SPEEmulator
 #endif
         }
 
-        public void Run()
+        /// <summary>
+        /// Gets or sets a list of instruction adresses where the simulator will pause
+        /// </summary>
+        public uint[] Breakpoints
+        {
+            get { return m_breakpoints; }
+            set { m_breakpoints = value; }
+        }
+
+        internal void Run()
         {
             lock (m_lock)
             {
@@ -131,18 +141,18 @@ namespace SPEEmulator
             }
         }
 
-        public void Stop()
+        internal void Stop()
         {
             m_doRun = false;
             m_event.Set();
         }
 
-        public void Pause()
+        internal void Pause()
         {
             m_event.Reset();
         }
 
-        public void Resume()
+        internal void Resume()
         {
             m_event.Set();
         }
@@ -167,6 +177,12 @@ namespace SPEEmulator
             {
                 try
                 {
+                    if (m_breakpoints.Contains(PC))
+                    {
+                        m_spe.RaiseWarning(SPEWarning.BreakPointHit, string.Format("* Breakpoint hit at 0x{0:x4}", PC)); 
+                        m_spe.Pause();
+                    }
+
                     m_event.WaitOne();
                     if (!m_doRun)
                         break;
@@ -1965,8 +1981,37 @@ private void Execute(OpCodes.fscrrd i)
         /// <param name="i"></param>
         private void Execute(OpCodes.stop i)
         {
-            this.PC = (PC - 4) & m_spe.LSLR;
-            this.m_doRun = false;
+            //this.PC = (PC - 4) & m_spe.LSLR;
+
+            m_doRun = false;
+
+            //Check for callback
+            if ((i.StopAndSignalType & 0xff00) == 0x2100)
+            {
+                uint handler = i.StopAndSignalType & 0xff;
+                uint func = m_spe.ReadLSWord(this.PC & m_spe.LSLR);
+
+                if (handler == 0) //C99
+                {
+                    if (C99DefaultHandler.HandleOp(m_spe, func))
+                        m_doRun = true;
+                }
+                else if (handler == 1) //Posix
+                {
+                    m_spe.RaiseMissingMethodError(string.Format("The posix method {0} is not implemented", func));
+                }
+                else if (handler == 1) //Libea
+                {
+                    m_spe.RaiseMissingMethodError(string.Format("The libea method {0} is not implemented", func));
+                }
+                else
+                {
+                    m_spe.RaiseMissingMethodError(string.Format("The userdefined callback {0} is not registered, function code was {1}", handler, func));
+                }
+            }
+
+            if (!m_doRun)
+                this.PC = (PC - 4) & m_spe.LSLR;
         }
 
         /// <summary>
