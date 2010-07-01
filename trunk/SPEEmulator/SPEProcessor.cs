@@ -7,6 +7,23 @@ namespace SPEEmulator
 {
     public delegate void StatusEventDelegate(SPEProcessor sender);
 
+    public delegate void InformationEventDelegate(SPEProcessor sender, string message);
+
+    public delegate void WarningEventDelegate(SPEProcessor sender, SPEWarning type, string message);
+
+    /// <summary>
+    /// Describes the warnings the SPE can issue
+    /// </summary>
+    public enum SPEWarning
+    {
+        UnalignedMemoryAccess,
+        WrappedMemoryAccess,
+        ReadCodeArea,
+        WriteCodeArea,
+        ExecuteDataArea,
+        UnalignedPC
+    }
+
     /// <summary>
     /// Describes the possible states for the SPE
     /// </summary>
@@ -130,6 +147,28 @@ namespace SPEEmulator
         /// Signals that the SPE has read its ingoing mailbox
         /// </summary>
         public event StatusEventDelegate InMboxRead;
+
+        /// <summary>
+        /// Signals that the given instruction is now executing
+        /// </summary>
+        public event InformationEventDelegate InstructionExecuting;
+        /// <summary>
+        /// Signals that an instruction was found but could not be executed due to a missing implementation
+        /// </summary>
+        public event InformationEventDelegate MissingMethodError;
+        /// <summary>
+        /// Signals that an instruction was found that could not be parsed into a valid instruction
+        /// </summary>
+        public event InformationEventDelegate InvalidOpCodeError;
+        /// <summary>
+        /// Signals that the SPU has executed a Printf operation
+        /// </summary>
+        public event InformationEventDelegate PrintfIssued;
+        
+        /// <summary>
+        /// Signals that the SPU is performing an operation that is likely to cause trouble, usually this indicates a fault in the program or emulator
+        /// </summary>
+        public event WarningEventDelegate Warning;
         #endregion
 
         #region Public methods
@@ -143,6 +182,10 @@ namespace SPEEmulator
         public SPEProcessor(uint LS_Size = DEFAULT_LS_SIZE, uint mboxsize = DEFAULT_MBOX_SIZE, uint intrmboxsize = DEFAULT_MBOX_SIZE, uint inmboxsize = DEFAULT_MBOX_SIZE)
         {
             m_ls = new byte[LS_Size];
+
+            if ((LSLR & (m_ls.Length - 1)) != (m_ls.Length - 1))
+                throw new Exception("Invalid size of LS, must be a power of two");
+
             m_outMboxSize = (int)mboxsize;
             m_outIntrMboxSize = (int)intrmboxsize;
             m_inMboxSize = (int)inmboxsize;
@@ -168,7 +211,7 @@ namespace SPEEmulator
         /// <summary>
         /// Gets the Local Storage Limit Register value
         /// </summary>
-        public uint LSLR { get { return /*(0x8000 << 1) - 1;*/ 0xffffffffu; } } //TODO: Calculate using m_ls.Length
+        public uint LSLR { get { return (uint)((m_ls.Length << 1) - 1); } }
 
         /// <summary>
         /// Gets the SPU instance
@@ -212,7 +255,7 @@ namespace SPEEmulator
                 m_state = SPEState.Terminated;
             }
 
-            //m_spu.Stop();
+            m_spu.Stop();
             //m_mfc.Stop();
 
             if (SPEStopped != null)
@@ -235,7 +278,7 @@ namespace SPEEmulator
                 m_state = SPEState.Paused;
             }
             
-            //m_spu.Pause();
+            m_spu.Pause();
             //m_mfc.Pause();
 
             if (SPEPaused != null)
@@ -258,7 +301,7 @@ namespace SPEEmulator
                 m_state = SPEState.Running;
             }
 
-            //m_spu.Resume();
+            m_spu.Resume();
             //m_mfc.Resume();
 
             if (SPEResumed != null)
@@ -383,6 +426,38 @@ namespace SPEEmulator
             }
 
             throw new InvalidProgramException("Not supposed to get here");
+        }
+        #endregion
+
+        #region Internal methods
+        internal void RaiseInstructionExecuting(string message)
+        {
+            if (InstructionExecuting != null)
+                InstructionExecuting(this, message);
+        }
+
+        internal void RaiseMissingMethodError(string message)
+        {
+            if (MissingMethodError != null)
+                MissingMethodError(this, message);
+        }
+
+        internal void RaiseInvalidOpCodeError(string message)
+        {
+            if (InvalidOpCodeError != null)
+                InvalidOpCodeError(this, message);
+        }
+
+        internal void RaisePrintfIssued(string message)
+        {
+            if (PrintfIssued != null)
+                PrintfIssued(this, message);
+        }
+
+        internal void RaiseWarning(SPEWarning type, string message)
+        {
+            if (Warning != null)
+                Warning(this, type, message);
         }
         #endregion
     }

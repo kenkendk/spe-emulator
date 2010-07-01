@@ -51,19 +51,25 @@ namespace SPEEmulatorTestApp
 
         private void Simulator_Load(object sender, EventArgs e)
         {
-            this.Height = 150;
         }
 
         private void StartButton_Click(object sender, EventArgs e)
         {
             if (m_spe == null || m_spe.State == SPEEmulator.SPEState.NotStarted || m_spe.State == SPEEmulator.SPEState.Terminated)
             {
+                OutputText.Text = "";
+
                 m_spe = new SPEEmulator.SPEProcessor();
 
                 m_spe.SPEStarted += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
                 m_spe.SPEStopped += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
                 m_spe.SPEPaused += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
                 m_spe.SPEResumed += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
+
+                m_spe.InstructionExecuting += new SPEEmulator.InformationEventDelegate(SPE_InstructionExecuting);
+                m_spe.MissingMethodError += new SPEEmulator.InformationEventDelegate(SPE_MissingMethodError);
+                m_spe.InvalidOpCodeError += new SPEEmulator.InformationEventDelegate(SPE_InvalidOpCodeError);
+                m_spe.Warning += new SPEEmulator.WarningEventDelegate(SPE_Warning);
 
                 m_spe.MboxWritten += new SPEEmulator.StatusEventDelegate(SPEMboxWritten);
                 m_spe.IntrMboxWritten += new SPEEmulator.StatusEventDelegate(SPEIntrMboxWritten);
@@ -91,6 +97,26 @@ namespace SPEEmulatorTestApp
             }
         }
 
+        private void SPE_Warning(SPEEmulator.SPEProcessor sender, SPEEmulator.SPEWarning type, string message)
+        {
+            WriteOutputText("* Warning: " + message + Environment.NewLine);
+        }
+
+        private void SPE_InstructionExecuting(SPEEmulator.SPEProcessor sender, string message)
+        {
+            WriteOutputText(message + Environment.NewLine);
+        }
+
+        private void SPE_MissingMethodError(SPEEmulator.SPEProcessor sender, string message)
+        {
+            WriteOutputText(message + Environment.NewLine);
+        }
+
+        private void SPE_InvalidOpCodeError(SPEEmulator.SPEProcessor sender, string message)
+        {
+            WriteOutputText(message + Environment.NewLine);
+        }
+
         private void SPEInMboxRead(SPEEmulator.SPEProcessor spe)
         {
             int s = spe.InMboxSize;
@@ -111,24 +137,34 @@ namespace SPEEmulatorTestApp
 
         private void SPEStatusChanged(SPEEmulator.SPEProcessor spe)
         {
-            if (spe.State == SPEEmulator.SPEState.Running)
+            if (this.InvokeRequired)
+                this.Invoke(new SPEEmulator.StatusEventDelegate(SPEStatusChanged), spe);
+            else
             {
-                this.Height = Math.Max(this.Height, 335 + SimulationButtonPanel.Height);
-                SimulationControls.Visible = SimulationControls.Enabled = true;
-                FilenamePanel.Enabled = false;
-                StartButton.Text = "Stop";
-                PauseButton.Text = "Pause";
-            }
-            else if (spe.State == SPEEmulator.SPEState.Terminated)
-            {
-                SimulationControls.Enabled = false;
-                FilenamePanel.Enabled = true;
-                StartButton.Text = "Start";
-                m_spe = null;
-            }
-            else if (spe.State == SPEEmulator.SPEState.Paused)
-            {
-                PauseButton.Text = "Resume";
+                if (spe.State == SPEEmulator.SPEState.Running)
+                {
+                    WriteOutputText("***** SPE is now running *****" + Environment.NewLine);
+                    SimulationControls.Enabled = true;
+                    SimulationInteractionControls.Enabled = true;
+                    FilenamePanel.Enabled = false;
+                    StartButton.Text = "Stop";
+                    PauseButton.Text = "Pause";
+                    PauseButton.Enabled = true;
+                }
+                else if (spe.State == SPEEmulator.SPEState.Terminated)
+                {
+                    WriteOutputText("***** SPE is now terminated *****" + Environment.NewLine);
+                    SimulationInteractionControls.Enabled = false;
+                    FilenamePanel.Enabled = true;
+                    StartButton.Text = "Start";
+                    PauseButton.Enabled = false;
+                    m_spe = null;
+                }
+                else if (spe.State == SPEEmulator.SPEState.Paused)
+                {
+                    WriteOutputText("***** SPE is now paused *****" + Environment.NewLine);
+                    PauseButton.Text = "Resume";
+                }
             }
         }
 
@@ -169,11 +205,19 @@ namespace SPEEmulatorTestApp
 
         }
 
-        private void WriteOutputText(string text)
+        private object WriteOutputText(string text)
         {
-            OutputText.Text += text;
-            OutputText.SelectionStart = OutputText.Text.Length;
-            OutputText.SelectionLength = 0;
+            if (this.InvokeRequired)
+                this.Invoke(new Func<string, object>(WriteOutputText), text);
+            else
+            {
+                OutputText.Text += text;
+                OutputText.SelectionStart = OutputText.Text.Length;
+                OutputText.SelectionLength = 0;
+                OutputText.ScrollToCaret();
+            }
+
+            return null;
         }
 
         private void ReadNormalMboxButton_Click(object sender, EventArgs e)

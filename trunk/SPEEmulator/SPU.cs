@@ -80,9 +80,15 @@ namespace SPEEmulator
         private Register m_SRR0;
 
         private uint m_pc;
-        private bool m_doRun = true;
+        private volatile bool m_doRun = true;
+
+        private uint m_codeSize = 0;
 
         private Dictionary<Type, System.Reflection.MethodInfo> m_executionFunctions;
+
+        private System.Threading.Thread m_thread;
+        private object m_lock = new object();
+        private System.Threading.ManualResetEvent m_event;
 
         public SPU(SPEProcessor spe, uint registercount = 128)
         {
@@ -91,6 +97,8 @@ namespace SPEEmulator
             for (int i = 0; i < m_registers.Length; i++)
                 m_registers[i] = new Register();
             m_parser = new OpCodes.OpCodeParser();
+
+            m_event = new System.Threading.ManualResetEvent(true);
 
             m_executionFunctions =
                 this.GetType().GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
@@ -112,69 +120,84 @@ namespace SPEEmulator
 
         public void Run()
         {
-            System.IO.StreamWriter textFile;
-            List<OpCodes.Bases.Mnemonic> missing = new List<OpCodes.Bases.Mnemonic>();
-
-            try
+            lock (m_lock)
             {
-                textFile = System.IO.File.CreateText("ProgramOpCodes.txt");
+                if (m_thread == null || m_thread.ThreadState == System.Threading.ThreadState.Stopped || m_thread.ThreadState == System.Threading.ThreadState.Unstarted)
+                {
+                    m_thread = new System.Threading.Thread(new System.Threading.ThreadStart(ThreadRun));
+                    m_thread.Start();
+                }
             }
-            catch (Exception)
-            {
-                throw new Exception("Could not open/load ProgramOpCodes.txt");
-            }
+        }
 
-            //TODO: This seems to be handled by the loader in an ELF
-            m_registers[1].Word = 0x3ffd0; //TODO: Must follow configureable LS size
+        public void Stop()
+        {
+            m_doRun = false;
+            m_event.Set();
+        }
 
+        public void Pause()
+        {
+            m_event.Reset();
+        }
+
+        public void Resume()
+        {
+            m_event.Set();
+        }
+
+        private void ThreadRun()
+        {
             m_registers[3].Word = 0x0a0a0a0; //spu-id
             m_registers[4].Word = 0x0e0e0e0; //argp
             m_registers[5].Word = 0x0c0c0c0; //envp
 
+            //This seems to be handled by the loader in an ELF file
+            /*m_registers[1].Word = 0x3ffd0; //TODO: Must follow configureable LS size
+
             CopyToLS(new RegisterValue(0), 0x3fff0); //Backpointer = NULL
             CopyToLS(new RegisterValue(0), 0x3ffe0); //Register save area
             CopyToLS(new RegisterValue(0x3fff0), 0x3ffd0); //Backpointer to bottom frame
+            */
+
+            bool inCodeSegment = PC < m_codeSize;
 
             while (m_doRun)
             {
                 try
                 {
+                    m_event.WaitOne();
+                    if (!m_doRun)
+                        break;
+
+                    if (PC < m_codeSize != inCodeSegment)
+                    {
+                        inCodeSegment = PC < m_codeSize;
+                        m_spe.RaiseWarning(SPEWarning.ExecuteDataArea, inCodeSegment ? "The execution is now back in the code segment" : "The execution is now in the DATA segment");
+                    }
+
                     SPEEmulator.OpCodes.Bases.Instruction op = m_parser.FindCode(m_spe.LS, PC);
 
-                    if (textFile != null)
-                        textFile.Write(PC + ": " + op.ToString());
-
-                    textFile.Flush();
+                    m_spe.RaiseInstructionExecuting(string.Format("{0:x4}: {1}", PC, op.ToString()));
 
                     try
                     {
                         Execute(op);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        textFile.Write(" - Not implemented");
-                        if (!missing.Contains(op.Mnemonic))
-                            missing.Add(op.Mnemonic);
+                        m_spe.RaiseMissingMethodError(string.Format("{0} is not implemented: {1}", op.Mnemonic, ex.ToString()));
+                        break;
                     }
-
-                    textFile.WriteLine();
-
-                    textFile.Flush();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    m_spe.RaiseInvalidOpCodeError(ex.ToString());
                     break;
                 }
             }
 
-            textFile.WriteLine("\n" +  missing.Count + " opcodes is NOT implemented");
-
-            missing.Sort();
-
-            foreach (OpCodes.Bases.Mnemonic mnemomic in missing)
-                textFile.WriteLine(mnemomic.ToString());
-
-            textFile.Flush();
+            m_spe.Stop();
         }
 
         /// <summary>
@@ -184,6 +207,15 @@ namespace SPEEmulator
         {
             get { return m_pc; }
             set { m_pc = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the size of the code region, used to issue warnings when attempting to mix data and execution
+        /// </summary>
+        public uint CodeSize
+        {
+            get { return m_codeSize; }
+            set { m_codeSize = value; }
         }
 
         /// <summary>
@@ -250,27 +282,44 @@ namespace SPEEmulator
             if (!m_executionFunctions.TryGetValue(i.GetType(), out mi) || mi == null)
                 throw new Exception(string.Format("Unable to execute instruction of type {0}", i.Mnemonic));
             mi.Invoke(this, new object[] { i });
-
-            //this.PC = next;
-            //m_doRun = true;
         }
 
+        #region Memory Access
         private void CopyToLS(RegisterValue v, long lsOffset)
         {
-            System.Diagnostics.Trace.Assert((lsOffset & m_spe.LSLR & (~0xf)) == lsOffset);
-            Array.Copy(v.Value, 0, m_spe.LS, lsOffset & m_spe.LSLR & (~0xf), 16);
+            if ((lsOffset & (~0xf)) != lsOffset)
+                m_spe.RaiseWarning(SPEWarning.UnalignedMemoryAccess, string.Format("Writing unaligned address {0:x8}", lsOffset));
+            if ((lsOffset & m_spe.LSLR) != lsOffset)
+                m_spe.RaiseWarning(SPEWarning.WrappedMemoryAccess, string.Format("Writing wrapped address {0:x8} -> {1:x8}", lsOffset, lsOffset & m_spe.LSLR));
+
+            lsOffset = lsOffset & m_spe.LSLR & (~0xf);
+
+            if (m_codeSize > 0 && lsOffset < m_codeSize)
+                m_spe.RaiseWarning(SPEWarning.ReadCodeArea, string.Format("Writing code address {0:x8}", lsOffset));
+
+            Array.Copy(v.Value, 0, m_spe.LS, lsOffset, 16);
         }
 
         private void CopyToLS(Register r, long lsOffset)
         {
-            System.Diagnostics.Trace.Assert((lsOffset & m_spe.LSLR & (~0xf)) == lsOffset);
-            Array.Copy(r.Value.Value, 0, m_spe.LS, lsOffset & m_spe.LSLR & (~0xf), 16); 
+            CopyToLS(r.Value, lsOffset);
         }
 
         private void CopyFromLS(Register r, long lsOffset)
         {
-            Array.Copy(m_spe.LS, (lsOffset & m_spe.LSLR), r.Value.Value, 0, 16);
+            if ((lsOffset & (~0xf)) != lsOffset)
+                m_spe.RaiseWarning(SPEWarning.UnalignedMemoryAccess, string.Format("Reading unaligned address {0:x8}", lsOffset));
+            if ((lsOffset & m_spe.LSLR) != lsOffset)
+                m_spe.RaiseWarning(SPEWarning.WrappedMemoryAccess, string.Format("Reading wrapped address {0:x8} -> {1:x8}", lsOffset, lsOffset & m_spe.LSLR));
+
+            lsOffset = lsOffset & m_spe.LSLR & (~0xf);
+
+            if (m_codeSize > 0 && lsOffset < m_codeSize)
+                m_spe.RaiseWarning(SPEWarning.ReadCodeArea, string.Format("Reading code address {0:x8}", lsOffset));
+
+            Array.Copy(m_spe.LS, lsOffset, r.Value.Value, 0, 16);
         }
+        #endregion
 
         #region ALUs
         /// <summary>
