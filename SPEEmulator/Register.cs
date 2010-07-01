@@ -70,6 +70,29 @@ namespace SPEEmulator
         }
     }
 
+    /*
+    static class Extension
+    {
+        public static int GetBit(this byte b, int offset)
+        {
+            if (offset < 0 || offset > 7)
+                throw new ArgumentOutOfRangeException("offset");
+
+            return (b >> (7 - offset)) & 0x1;
+        }
+
+        public static byte SetBit(this byte b, int offset, int value)
+        {
+            if (offset < 0 || offset > 7)
+                throw new ArgumentOutOfRangeException("offset");
+            if (value != 0 && value != 1)
+                throw new ArgumentOutOfRangeException("value");
+
+            return (b ^= (byte)((value % 2) << (7 - offset)));
+        }
+    }
+    */
+    
     /// <summary>
     /// Represents an SPU register value,
     /// emulated by using 16 byte values
@@ -79,6 +102,18 @@ namespace SPEEmulator
         private byte[] m_value = new byte[16];
 
         public byte[] Value { get { return m_value; } }
+
+        /*
+        public int getBit(int bytes, int offset)
+        {
+            return m_value[((bytes * 8) - offset) / 8].GetBit(((bytes * 8) - offset) % 8);
+        }
+
+        public void setBit(int bytes, int offset, int value)
+        {
+            m_value[((bytes * 8) - offset) / 8].SetBit(((bytes * 8) - offset) % 8, value);
+        }
+        */
 
         public bool Negative
         {
