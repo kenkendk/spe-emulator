@@ -248,7 +248,7 @@ namespace SPEEmulator
                 for(int i = 0; i < m_progheaders.Length; i++)
                     if (m_progheaders[i].type == 1 && (m_progheaders[i].flags & 0x1) == 1) //Load and execute
                     {
-                        sw.WriteLine("# Program section {0} at virtual offset {1}, file offset {2}", i, m_progheaders[i].vaddr, m_progheaders[i].offset);
+                        sw.WriteLine("# Program section {0} at virtual offset 0x{1:x8}, file offset 0x{2:x8}", i, m_progheaders[i].vaddr, m_progheaders[i].offset);
                         sw.WriteLine();
 
                         for (int j = 0; j < m_progheaders[i].memsz; j += 4)
@@ -265,11 +265,11 @@ namespace SPEEmulator
                                     sw.WriteLine(FindString(v.name) + ":");
 
                                 OpCodes.Bases.Instruction op = parser.FindCode(m_programsections[i], (uint)j);
-                                sw.WriteLine("{0:x4}: {1}", j, op.ToString());
+                                sw.WriteLine("0x{0:x4}: {1}", j, op.ToString());
                             }
                             catch
                             {
-                                sw.WriteLine("{0:x4}: Unrecognized instruction {1:x2}{2:x2}{3:x2}{4:x2}", j, m_programsections[i][j], m_programsections[i][j + 1], m_programsections[i][j + 2], m_programsections[i][j + 3]);
+                                sw.WriteLine("0x{0:x4}: Unrecognized instruction {1:x2}{2:x2}{3:x2}{4:x2}", j, m_programsections[i][j], m_programsections[i][j + 1], m_programsections[i][j + 2], m_programsections[i][j + 3]);
                             }
                         }
                     }
