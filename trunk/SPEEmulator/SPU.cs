@@ -612,7 +612,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.iohl i)
         {
-            m_registers[i.RT].Value = ALUWord(null, null, null, (a, b, c, carry) => i.I16);
+            m_registers[i.RT].Value |= ALUWord(null, null, null, (a, b, c, carry) => i.I16);
         }
 
         private void Execute(OpCodes.fsmbi i)
@@ -1807,139 +1807,153 @@ namespace SPEEmulator
         #endregion
 
         #region Floating-Point Instructions
-        /*
+
         private void Execute(OpCodes.fa i)
         {
-        }
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) =>
+            {
+                byte[] aB = BitConverter.GetBytes(a);
+                byte[] bB = BitConverter.GetBytes(b);
+                
+                float aF = BitConverter.ToSingle(aB, 0);
+                float bF = BitConverter.ToSingle(bB, 0);
 
-        private void Execute(OpCodes.dfa i)
-        {
-        }
+                return BitConverter.ToUInt32(BitConverter.GetBytes(aF + bF), 0);
+            });
 
-        private void Execute(OpCodes.fs i)
-        {
-        }
+            throw new Exception("Not reviewed");
+         }
 
-        private void Execute(OpCodes.dfs i)
-        {
-        }
+        /*
 
-        private void Execute(OpCodes.fm i)
-        {
-        }
+private void Execute(OpCodes.dfa i)
+{
+}
 
-        private void Execute(OpCodes.dfm i)
-        {
-        }
+private void Execute(OpCodes.fs i)
+{
+}
 
-        private void Execute(OpCodes.fma i)
-        {
-        }
+private void Execute(OpCodes.dfs i)
+{
+}
 
-        private void Execute(OpCodes.dfma i)
-        {
-        }
+private void Execute(OpCodes.fm i)
+{
+}
 
-        private void Execute(OpCodes.fnms i)
-        {
-        }
+private void Execute(OpCodes.dfm i)
+{
+}
 
-        private void Execute(OpCodes.dfnms i)
-        {
-        }
+private void Execute(OpCodes.fma i)
+{
+}
 
-        private void Execute(OpCodes.fms i)
-        {
-        }
+private void Execute(OpCodes.dfma i)
+{
+}
 
-        private void Execute(OpCodes.dfms i)
-        {
-        }
+private void Execute(OpCodes.fnms i)
+{
+}
 
-        private void Execute(OpCodes.dfnma i)
-        {
-        }
+private void Execute(OpCodes.dfnms i)
+{
+}
 
-        private void Execute(OpCodes.frest i)
-        {
-        }
+private void Execute(OpCodes.fms i)
+{
+}
 
-        private void Execute(OpCodes.frsqest i)
-        {
-        }
+private void Execute(OpCodes.dfms i)
+{
+}
 
-        private void Execute(OpCodes.fi i)
-        {
-        }
+private void Execute(OpCodes.dfnma i)
+{
+}
 
-        private void Execute(OpCodes.csflt i)
-        {
-        }
+private void Execute(OpCodes.frest i)
+{
+}
 
-        private void Execute(OpCodes.cflts i)
-        {
-        }
+private void Execute(OpCodes.frsqest i)
+{
+}
 
-        private void Execute(OpCodes.cuflt i)
-        {
-        }
+private void Execute(OpCodes.fi i)
+{
+}
 
-        private void Execute(OpCodes.cfltu i)
-        {
-        }
+private void Execute(OpCodes.csflt i)
+{
+}
 
-        private void Execute(OpCodes.frds i)
-        {
-        }
+private void Execute(OpCodes.cflts i)
+{
+}
 
-        private void Execute(OpCodes.fesd i)
-        {
-        }
+private void Execute(OpCodes.cuflt i)
+{
+}
 
-        private void Execute(OpCodes.dfceq i)
-        {
-        }
+private void Execute(OpCodes.cfltu i)
+{
+}
 
-        private void Execute(OpCodes.dfcmeq i)
-        {
-        }
+private void Execute(OpCodes.frds i)
+{
+}
 
-        private void Execute(OpCodes.dfcgt i)
-        {
-        }
+private void Execute(OpCodes.fesd i)
+{
+}
 
-        private void Execute(OpCodes.dfcmgt i)
-        {
-        }
+private void Execute(OpCodes.dfceq i)
+{
+}
 
-        private void Execute(OpCodes.dftsv i)
-        {
-        }
+private void Execute(OpCodes.dfcmeq i)
+{
+}
 
-        private void Execute(OpCodes.fceq i)
-        {
-        }
+private void Execute(OpCodes.dfcgt i)
+{
+}
 
-        private void Execute(OpCodes.fcmeq i)
-        {
-        }
+private void Execute(OpCodes.dfcmgt i)
+{
+}
 
-        private void Execute(OpCodes.fcgt i)
-        {
-        }
+private void Execute(OpCodes.dftsv i)
+{
+}
 
-        private void Execute(OpCodes.fcmgt i)
-        {
-        }
+private void Execute(OpCodes.fceq i)
+{
+}
 
-        private void Execute(OpCodes.fscrwr i)
-        {
-        }
+private void Execute(OpCodes.fcmeq i)
+{
+}
 
-        private void Execute(OpCodes.fscrrd i)
-        {
-        }
-        */
+private void Execute(OpCodes.fcgt i)
+{
+}
+
+private void Execute(OpCodes.fcmgt i)
+{
+}
+
+private void Execute(OpCodes.fscrwr i)
+{
+}
+
+private void Execute(OpCodes.fscrrd i)
+{
+}
+*/
 
         #endregion
 
