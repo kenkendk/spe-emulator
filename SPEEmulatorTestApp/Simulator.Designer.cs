@@ -51,6 +51,7 @@
             this.WriteOutMboxButton = new System.Windows.Forms.Button();
             this.OutMboxValue = new System.Windows.Forms.NumericUpDown();
             this.SimulationControls = new System.Windows.Forms.Panel();
+            this.SimulationInteractionControls = new System.Windows.Forms.Panel();
             this.CILBrowsePanel = new System.Windows.Forms.Panel();
             this.ELFBrowsePanel = new System.Windows.Forms.Panel();
             this.DisassembleElf = new System.Windows.Forms.Button();
@@ -58,14 +59,13 @@
             this.SimulationButtonPanel = new System.Windows.Forms.Panel();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.SimulationInteractionControls = new System.Windows.Forms.Panel();
             ((System.ComponentModel.ISupportInitialize)(this.OutMboxValue)).BeginInit();
             this.SimulationControls.SuspendLayout();
+            this.SimulationInteractionControls.SuspendLayout();
             this.CILBrowsePanel.SuspendLayout();
             this.ELFBrowsePanel.SuspendLayout();
             this.FilenamePanel.SuspendLayout();
             this.SimulationButtonPanel.SuspendLayout();
-            this.SimulationInteractionControls.SuspendLayout();
             this.SuspendLayout();
             // 
             // ELFFilename
@@ -311,6 +311,27 @@
             this.SimulationControls.Size = new System.Drawing.Size(419, 335);
             this.SimulationControls.TabIndex = 1;
             // 
+            // SimulationInteractionControls
+            // 
+            this.SimulationInteractionControls.Controls.Add(this.OutMboxValue);
+            this.SimulationInteractionControls.Controls.Add(this.OutMboxStatus);
+            this.SimulationInteractionControls.Controls.Add(this.label7);
+            this.SimulationInteractionControls.Controls.Add(this.WriteOutMboxButton);
+            this.SimulationInteractionControls.Controls.Add(this.AutoReadIntrMbox);
+            this.SimulationInteractionControls.Controls.Add(this.IntrMboxStatus);
+            this.SimulationInteractionControls.Controls.Add(this.label5);
+            this.SimulationInteractionControls.Controls.Add(this.ReadIntrMboxButton);
+            this.SimulationInteractionControls.Controls.Add(this.AutoReadNormalMbox);
+            this.SimulationInteractionControls.Controls.Add(this.NormalMboxStatus);
+            this.SimulationInteractionControls.Controls.Add(this.label1);
+            this.SimulationInteractionControls.Controls.Add(this.ReadNormalMboxButton);
+            this.SimulationInteractionControls.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.SimulationInteractionControls.Enabled = false;
+            this.SimulationInteractionControls.Location = new System.Drawing.Point(0, 239);
+            this.SimulationInteractionControls.Name = "SimulationInteractionControls";
+            this.SimulationInteractionControls.Size = new System.Drawing.Size(419, 96);
+            this.SimulationInteractionControls.TabIndex = 2;
+            // 
             // CILBrowsePanel
             // 
             this.CILBrowsePanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
@@ -378,27 +399,6 @@
             this.saveFileDialog.Filter = "Assembly files (*.s, *.asm)|*.s;*.asm|All files (*.*)|*.*";
             this.saveFileDialog.Title = "Selft file to save disassembly in";
             // 
-            // SimulationInteractionControls
-            // 
-            this.SimulationInteractionControls.Controls.Add(this.OutMboxValue);
-            this.SimulationInteractionControls.Controls.Add(this.OutMboxStatus);
-            this.SimulationInteractionControls.Controls.Add(this.label7);
-            this.SimulationInteractionControls.Controls.Add(this.WriteOutMboxButton);
-            this.SimulationInteractionControls.Controls.Add(this.AutoReadIntrMbox);
-            this.SimulationInteractionControls.Controls.Add(this.IntrMboxStatus);
-            this.SimulationInteractionControls.Controls.Add(this.label5);
-            this.SimulationInteractionControls.Controls.Add(this.ReadIntrMboxButton);
-            this.SimulationInteractionControls.Controls.Add(this.AutoReadNormalMbox);
-            this.SimulationInteractionControls.Controls.Add(this.NormalMboxStatus);
-            this.SimulationInteractionControls.Controls.Add(this.label1);
-            this.SimulationInteractionControls.Controls.Add(this.ReadNormalMboxButton);
-            this.SimulationInteractionControls.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.SimulationInteractionControls.Enabled = false;
-            this.SimulationInteractionControls.Location = new System.Drawing.Point(0, 239);
-            this.SimulationInteractionControls.Name = "SimulationInteractionControls";
-            this.SimulationInteractionControls.Size = new System.Drawing.Size(419, 96);
-            this.SimulationInteractionControls.TabIndex = 2;
-            // 
             // Simulator
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -413,6 +413,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.OutMboxValue)).EndInit();
             this.SimulationControls.ResumeLayout(false);
             this.SimulationControls.PerformLayout();
+            this.SimulationInteractionControls.ResumeLayout(false);
+            this.SimulationInteractionControls.PerformLayout();
             this.CILBrowsePanel.ResumeLayout(false);
             this.CILBrowsePanel.PerformLayout();
             this.ELFBrowsePanel.ResumeLayout(false);
@@ -420,8 +422,6 @@
             this.FilenamePanel.ResumeLayout(false);
             this.FilenamePanel.PerformLayout();
             this.SimulationButtonPanel.ResumeLayout(false);
-            this.SimulationInteractionControls.ResumeLayout(false);
-            this.SimulationInteractionControls.PerformLayout();
             this.ResumeLayout(false);
 
         }

@@ -85,6 +85,7 @@ namespace SPEEmulator
         private static string printf(SPEProcessor spe, uint ls_args, string format)
         {
             List<object> data = new List<object>();
+            //TODO: This regexp does not support all formats known to printf
             System.Text.RegularExpressions.Regex r = new System.Text.RegularExpressions.Regex(@"\%[cdieEfFgGhlpouxXs]");
 
             uint offset = spe.ReadLSWord(LS_ARG_ADDR(ls_args, 1));

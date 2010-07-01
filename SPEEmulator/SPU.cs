@@ -1994,7 +1994,10 @@ private void Execute(OpCodes.fscrrd i)
                 if (handler == 0) //C99
                 {
                     if (C99DefaultHandler.HandleOp(m_spe, func))
+                    {
                         m_doRun = true;
+                        PC = m_registers[0].Word;
+                    }
                 }
                 else if (handler == 1) //Posix
                 {
@@ -2009,9 +2012,10 @@ private void Execute(OpCodes.fscrrd i)
                     m_spe.RaiseMissingMethodError(string.Format("The userdefined callback {0} is not registered, function code was {1}", handler, func));
                 }
             }
-
-            if (!m_doRun)
-                this.PC = (PC - 4) & m_spe.LSLR;
+            else if ((i.StopAndSignalType & 0xff00) == 0x2000)
+            {
+                m_spe.RaiseExitEvent(i.StopAndSignalType & 0xff);
+            }
         }
 
         /// <summary>

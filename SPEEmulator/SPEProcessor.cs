@@ -11,6 +11,8 @@ namespace SPEEmulator
 
     public delegate void WarningEventDelegate(SPEProcessor sender, SPEWarning type, string message);
 
+    public delegate void ExitEventDelegate(SPEProcessor sender, uint exitcode);
+
     /// <summary>
     /// Describes the warnings the SPE can issue
     /// </summary>
@@ -170,6 +172,10 @@ namespace SPEEmulator
         /// Signals that the SPU is performing an operation that is likely to cause trouble, usually this indicates a fault in the program or emulator
         /// </summary>
         public event WarningEventDelegate Warning;
+        /// <summary>
+        /// Signals that the SPE has exited
+        /// </summary>
+        public event ExitEventDelegate Exit;
         #endregion
 
         #region Public methods
@@ -505,6 +511,12 @@ namespace SPEEmulator
         {
             if (Warning != null)
                 Warning(this, type, message);
+        }
+
+        internal void RaiseExitEvent(uint code)
+        {
+            if (Exit != null)
+                Exit(this, code);
         }
         #endregion
     }
