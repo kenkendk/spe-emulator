@@ -121,7 +121,7 @@ namespace SPEEmulator.OpCodes
 
         public override string ToString()
         {
-            return base.ToString() + string.Format("ChannelSync={0}", this.ChannelSynchronization);
+            return base.ToString() + string.Format(" ChannelSync={0}", this.ChannelSynchronization);
         }
 
     }

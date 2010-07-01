@@ -71,6 +71,7 @@ namespace SPEEmulatorTestApp
                 m_spe.InvalidOpCodeError += new SPEEmulator.InformationEventDelegate(SPE_InvalidOpCodeError);
                 m_spe.PrintfIssued += new SPEEmulator.InformationEventDelegate(SPE_PrintfIssued);
                 m_spe.Warning += new SPEEmulator.WarningEventDelegate(SPE_Warning);
+                m_spe.Exit += new SPEEmulator.ExitEventDelegate(SPE_Exit);
 
                 //m_spe.SPU.Breakpoints = new uint[] { 0x03bc };
 
@@ -98,6 +99,11 @@ namespace SPEEmulatorTestApp
             {
                 m_spe.Stop();
             }
+        }
+
+        private void SPE_Exit(SPEEmulator.SPEProcessor sender, uint exitcode)
+        {
+            WriteOutputText(string.Format("SPE has exited with code 0x{0:x4}", exitcode) + Environment.NewLine);
         }
 
         private void SPE_PrintfIssued(SPEEmulator.SPEProcessor sender, string message)
