@@ -40,11 +40,11 @@ namespace SPEEmulator.OpCodes
 
             foreach (Bases.Instruction o in ops)
                 if (ops.Exists(c => c.Mnemonic == o.Mnemonic && c != o))
-                    throw new Exception(string.Format("Duplicati mnemonic {0}", o.Mnemonic));
+                    throw new Exception(string.Format("Duplicate mnemonic {0}", o.Mnemonic));
 
             foreach (Bases.Instruction o in ops)
                 if (ops.Exists(c => c.Value == o.Value && c != o))
-                    throw new Exception(string.Format("Duplicati value {0}: {1} and {2}", o.Value, o.Mnemonic, ops.First(c => c.Value == o.Value && c != o).Mnemonic));
+                    throw new Exception(string.Format("Duplicate value 0x{0:x8}: {1} and {2}", o.Value, o.Mnemonic, ops.First(c => c.Value == o.Value && c != o).Mnemonic));
 #endif
 
             m_root = new Node(ops[0], 31);
@@ -118,7 +118,7 @@ namespace SPEEmulator.OpCodes
                 }
 
                 if (!done)
-                    throw new Exception(string.Format("Opcode {0} {1} is located more than once", o.Mnemonic, o.Value));
+                    throw new Exception(string.Format("Opcode {0} 0x{1:x8} is located more than once", o.Mnemonic, o.Value));
             }
 
         }
@@ -139,7 +139,7 @@ namespace SPEEmulator.OpCodes
                     n = n.One;
 
                 if (n == null)
-                    throw new InvalidOperationException(string.Format("Unknown OP code {0}", value));
+                    throw new InvalidOperationException(string.Format("Unknown OP code 0x{0:x8}", value));
 
                 pos--;
             }
@@ -151,7 +151,7 @@ namespace SPEEmulator.OpCodes
         {
             Node n = FindNode(value);
             if ((n.Op.Value & n.Op.Mask) != (value & n.Op.Mask))
-                throw new InvalidOperationException(string.Format("Unknown OP code {0}", value));
+                throw new InvalidOperationException(string.Format("Unknown OP code 0x{0:x8}", value));
 
             //This throws and exception if the opcode is wrong
             n.Op.Value = value;

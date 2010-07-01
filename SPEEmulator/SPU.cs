@@ -178,7 +178,7 @@ namespace SPEEmulator
 
                     SPEEmulator.OpCodes.Bases.Instruction op = m_parser.FindCode(m_spe.LS, PC);
 
-                    m_spe.RaiseInstructionExecuting(string.Format("{0:x4}: {1}", PC, op.ToString()));
+                    m_spe.RaiseInstructionExecuting(string.Format("0x{0:x4}: {1}", PC, op.ToString()));
 
                     try
                     {
@@ -288,14 +288,14 @@ namespace SPEEmulator
         private void CopyToLS(RegisterValue v, long lsOffset)
         {
             if ((lsOffset & (~0xf)) != lsOffset)
-                m_spe.RaiseWarning(SPEWarning.UnalignedMemoryAccess, string.Format("Writing unaligned address {0:x8}", lsOffset));
+                m_spe.RaiseWarning(SPEWarning.UnalignedMemoryAccess, string.Format("Writing unaligned address 0x{0:x8} -> 0x{1:x8}", lsOffset, lsOffset & (~0xf)));
             if ((lsOffset & m_spe.LSLR) != lsOffset)
-                m_spe.RaiseWarning(SPEWarning.WrappedMemoryAccess, string.Format("Writing wrapped address {0:x8} -> {1:x8}", lsOffset, lsOffset & m_spe.LSLR));
+                m_spe.RaiseWarning(SPEWarning.WrappedMemoryAccess, string.Format("Writing wrapped address 0x{0:x8} -> 0x{1:x8}", lsOffset, lsOffset & m_spe.LSLR));
 
             lsOffset = lsOffset & m_spe.LSLR & (~0xf);
 
             if (m_codeSize > 0 && lsOffset < m_codeSize)
-                m_spe.RaiseWarning(SPEWarning.ReadCodeArea, string.Format("Writing code address {0:x8}", lsOffset));
+                m_spe.RaiseWarning(SPEWarning.ReadCodeArea, string.Format("Writing code address 0x{0:x8}", lsOffset));
 
             Array.Copy(v.Value, 0, m_spe.LS, lsOffset, 16);
         }
@@ -308,14 +308,14 @@ namespace SPEEmulator
         private void CopyFromLS(Register r, long lsOffset)
         {
             if ((lsOffset & (~0xf)) != lsOffset)
-                m_spe.RaiseWarning(SPEWarning.UnalignedMemoryAccess, string.Format("Reading unaligned address {0:x8}", lsOffset));
+                m_spe.RaiseWarning(SPEWarning.UnalignedMemoryAccess, string.Format("Reading unaligned address 0x{0:x8} -> 0x{1:x8}", lsOffset, lsOffset & (~0xf)));
             if ((lsOffset & m_spe.LSLR) != lsOffset)
-                m_spe.RaiseWarning(SPEWarning.WrappedMemoryAccess, string.Format("Reading wrapped address {0:x8} -> {1:x8}", lsOffset, lsOffset & m_spe.LSLR));
+                m_spe.RaiseWarning(SPEWarning.WrappedMemoryAccess, string.Format("Reading wrapped address 0x{0:x8} -> 0x{1:x8}", lsOffset, lsOffset & m_spe.LSLR));
 
             lsOffset = lsOffset & m_spe.LSLR & (~0xf);
 
             if (m_codeSize > 0 && lsOffset < m_codeSize)
-                m_spe.RaiseWarning(SPEWarning.ReadCodeArea, string.Format("Reading code address {0:x8}", lsOffset));
+                m_spe.RaiseWarning(SPEWarning.ReadCodeArea, string.Format("Reading code address 0x{0:x8}", lsOffset));
 
             Array.Copy(m_spe.LS, lsOffset, r.Value.Value, 0, 16);
         }
