@@ -77,7 +77,8 @@ namespace SPEEmulator
         private OpCodes.OpCodeParser m_parser;
 
         private Register[] m_registers;
-        private Register m_SRR0;
+        private Register m_SRR0 = null;
+        private Register m_SA = null;
 
         private uint m_pc;
         private volatile bool m_doRun = true;
@@ -1997,15 +1998,32 @@ namespace SPEEmulator
         /// <param name="i"></param>
         private void Execute(OpCodes.dsync i) { }
 
-        /*
+        /// <summary>
+        /// Special-Purpose Register SA is copied into register RT. If SPR SA is not defined, zeros are supplied.
+        /// Note: The SPU ISA defines the mtspr and mfspr instructions as 128-bit operations. An implementation might define 32-bit wide registers. In that 
+        /// case, the 32-bit value occupies the preferred slot; the other slots return zeros. (Not supported by this C# implementation)
+        /// </summary>
+        /// <param name="i"></param>
         private void Execute(OpCodes.mfspr i)
         {
+
+            if (m_SA != null)
+                m_registers[i.RT].Value = m_SA.Value;
+            else
+                m_registers[i.RT].Value = new RegisterValue(0);
         }
 
+        /// <summary>
+        /// The contents of register RT is written to Special-Purpose Register SA. If SPR SA is not defined, no operation is performed.
+        /// Note: The SPU ISA defines the mtspr and mfspr instructions as 128-bit operations. An implementation might define 32-bit wide registers. In that 
+        /// case, the 32-bit value of the preferred slot is used; values in the other slots are ignored. (Not supported by this C# implementation)
+        /// </summary>
+        /// <param name="i"></param>
         private void Execute(OpCodes.mtspr i)
         {
+            if (m_SA != null)
+                m_SA.Value = m_registers[i.RT].Value;
         }
-        */
 
         #endregion
 
