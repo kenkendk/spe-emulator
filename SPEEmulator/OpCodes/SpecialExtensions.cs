@@ -74,6 +74,11 @@ namespace SPEEmulator.OpCodes
                     m_value &= 0x100000u;
             }
         }
+
+        public override string ToString()
+        {
+            return base.ToString() + string.Format("${0}, RO=0x{1:x8}, P={2}", this.RA, this.RO, this.P);
+        }
     }
 
     partial class stop
@@ -89,6 +94,11 @@ namespace SPEEmulator.OpCodes
                 System.Diagnostics.Trace.Assert((value & 0x3fff) == 0);
                 m_value |= value & 0x3fff;
             }
+        }
+
+        public override string ToString()
+        {
+            return base.ToString() + string.Format("0x{0:x4}", this.StopAndSignalType);
         }
     }
 
@@ -107,6 +117,11 @@ namespace SPEEmulator.OpCodes
                 else
                     m_value &= ~0x200000u;
             }
+        }
+
+        public override string ToString()
+        {
+            return base.ToString() + string.Format("ChannelSync={0}", this.ChannelSynchronization);
         }
 
     }

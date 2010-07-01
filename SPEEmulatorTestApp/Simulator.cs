@@ -69,7 +69,10 @@ namespace SPEEmulatorTestApp
                 m_spe.InstructionExecuting += new SPEEmulator.InformationEventDelegate(SPE_InstructionExecuting);
                 m_spe.MissingMethodError += new SPEEmulator.InformationEventDelegate(SPE_MissingMethodError);
                 m_spe.InvalidOpCodeError += new SPEEmulator.InformationEventDelegate(SPE_InvalidOpCodeError);
+                m_spe.PrintfIssued += new SPEEmulator.InformationEventDelegate(SPE_PrintfIssued);
                 m_spe.Warning += new SPEEmulator.WarningEventDelegate(SPE_Warning);
+
+                //m_spe.SPU.Breakpoints = new uint[] { 0x03bc };
 
                 m_spe.MboxWritten += new SPEEmulator.StatusEventDelegate(SPEMboxWritten);
                 m_spe.IntrMboxWritten += new SPEEmulator.StatusEventDelegate(SPEIntrMboxWritten);
@@ -97,9 +100,14 @@ namespace SPEEmulatorTestApp
             }
         }
 
+        private void SPE_PrintfIssued(SPEEmulator.SPEProcessor sender, string message)
+        {
+            WriteOutputText(message + Environment.NewLine);
+        }
+
         private void SPE_Warning(SPEEmulator.SPEProcessor sender, SPEEmulator.SPEWarning type, string message)
         {
-            WriteOutputText("* Warning: " + message + Environment.NewLine);
+            WriteOutputText((type == SPEEmulator.SPEWarning.BreakPointHit ? "" : "* Warning: ") + message + Environment.NewLine);
         }
 
         private void SPE_InstructionExecuting(SPEEmulator.SPEProcessor sender, string message)
