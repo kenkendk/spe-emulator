@@ -290,6 +290,8 @@ namespace SPEEmulator
                 if (m_progheaders[i].type == 1)
                 {
                     Array.Copy(m_programsections[i], 0, spe.LS, m_progheaders[i].vaddr, m_programsections[i].Length);
+                    if (m_progheaders[i].vaddr < m_header.entry && m_progheaders[i].vaddr + m_progheaders[i].memsz > m_header.entry)
+                        spe.SPU.CodeSize = (uint)m_progheaders[i].vaddr + m_progheaders[i].memsz; //TODO: If execution is not at boundary 0x0, this counter is wrong
                 }
         }
 
