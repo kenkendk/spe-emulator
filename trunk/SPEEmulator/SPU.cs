@@ -1194,54 +1194,38 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.roth i)
         {
-            ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) => {
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) =>
+            {
                 ushort s = (ushort)(b & 0x000F);
-                rt = (ushort)((a << (int)s) | (a >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s)));
-                return 0;
+                return (ushort)((a << (int)s) | (a >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s)));
             });
-
-            throw new Exception("Check that System.Runtime.InteropServices.Marshal.Sizeof(a) return 16");
-            throw new Exception("Not reviewed");
         }
         
         private void Execute(OpCodes.rothi i)
         {
             ushort s = (ushort)(RepLeftBit(i, 0) & 0x000f);
 
-            ALUHalfWord(m_registers[i.RA].Value, null, m_registers[i.RT].Value, (a, b, rt, carry) => {
-                rt = (ushort)((a << (int)s) | (a >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s)));
-                return 0;
-            });
-
-            throw new Exception("Check that System.Runtime.InteropServices.Marshal.Sizeof(a) return 16");
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
+                (ushort)((a << (int)s) | (a >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s)))
+            );
         }
 
         private void Execute(OpCodes.rot i)
         {
-            ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) =>
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) =>
             {
                 uint s = (uint)b & 0x0000001F;
-                rt = (ushort)((a << (int)s) | (a >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s)));
-                return 0;
+                return (ushort)((a << (int)s) | (a >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s)));
             });
-
-            throw new Exception("Check that System.Runtime.InteropServices.Marshal.Sizeof(a) return 32");
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.roti i)
         {
             uint s = (uint)(RepLeftBit(i, 0) & 0x0000001F);
 
-            ALUWord(m_registers[i.RA].Value, null, m_registers[i.RT].Value, (a, b, rt, carry) =>
-            {                
-                rt = (ushort)((a << (int)s) | (a >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s)));
-                return 0;
-            });
-
-            throw new Exception("Check that System.Runtime.InteropServices.Marshal.Sizeof(a) return 32");
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
+                (ushort)((a << (int)s) | (a >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s)))
+            );
         }
         
         private void Execute(OpCodes.rotqby i)
@@ -1282,7 +1266,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.rotqbybi i)
         {
-            uint byteShift = (m_registers[i.RB].Word >> 3) & 0x1f;
+            uint byteShift = (m_registers[i.RB].Word >> 3) & 0x0f; //Note docs say both bits 25-28 and bits 24-28
 
             if (byteShift == 0)
             {
@@ -1297,191 +1281,171 @@ namespace SPEEmulator
 
                 m_registers[i.RT].Value = tmp;
             }
-
-            throw new Exception("Not reviewed");
          }
 
         private void Execute(OpCodes.rotqbi i)
         {
-            uint byteShift = m_registers[i.RB].Word & 0x0f;
+            uint byteShift = m_registers[i.RB].Word & 0x07;
 
-            m_registers[i.RT].Value.low = (ulong)((m_registers[i.RA].Value.low << (int)byteShift) | (m_registers[i.RA].Value.high >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RT].Value.low) - byteShift)));
-            m_registers[i.RT].Value.high = (ulong)((m_registers[i.RA].Value.high << (int)byteShift) | (m_registers[i.RA].Value.low >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RT].Value.high) - byteShift)));
+            RegisterValue tmp = new RegisterValue();
 
-            throw new Exception("Check that System.Runtime.InteropServices.Marshal.Sizeof(rt.high/low) returns 64");
-            throw new Exception("Not reviewed");
+            tmp.low = (ulong)((m_registers[i.RA].Value.low << (int)byteShift) | (m_registers[i.RA].Value.high >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RT].Value.low) - byteShift)));
+            tmp.high = (ulong)((m_registers[i.RA].Value.high << (int)byteShift) | (m_registers[i.RA].Value.low >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RT].Value.high) - byteShift)));
+
+            m_registers[i.RT].Value = tmp;
         }
 
         private void Execute(OpCodes.rotqbii i)
         {
             uint byteShift = i.I7 & 0x7;
 
-            m_registers[i.RT].Value.low = (ulong)((m_registers[i.RA].Value.low << (int)byteShift) | (m_registers[i.RA].Value.high >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RT].Value.low) - byteShift)));
-            m_registers[i.RT].Value.high = (ulong)((m_registers[i.RA].Value.high << (int)byteShift) | (m_registers[i.RA].Value.low >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RT].Value.high) - byteShift)));
+            RegisterValue tmp = new RegisterValue();
 
-            throw new Exception("Check that System.Runtime.InteropServices.Marshal.Sizeof(rt.high/low) returns 64");
-            throw new Exception("Not reviewed");
+            tmp.low = (ulong)((m_registers[i.RA].Value.low << (int)byteShift) | (m_registers[i.RA].Value.high >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RT].Value.low) - byteShift)));
+            tmp.high = (ulong)((m_registers[i.RA].Value.high << (int)byteShift) | (m_registers[i.RA].Value.low >> (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RT].Value.high) - byteShift)));
+
+            m_registers[i.RT].Value = tmp;
         }
 
         private void Execute(OpCodes.rothm i)
         {
-            ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) => {
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => {
                 ushort s = (ushort)((0 - b) & 0x001F);
-                rt = (ushort)(a >> (int)s);
-                return 0;
+                return (ushort)(a >> (int)s);
             });
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.rothmi i)
         {
             ushort s = (ushort)((0 - RepLeftBit(i, 0)) & 0x0000001F);
-
-            ALUHalfWord(m_registers[i.RA].Value, null, m_registers[i.RT].Value, (a, b, rt, carry) => {
-                rt = (ushort)(a >> (int)s);
-                return 0;
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (ushort)(a >> (int)s));
         }
 
         private void Execute(OpCodes.rotm i)
         {
-            ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) =>
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) =>
             {
                 uint s = (uint)(0 - b) & 0x0000003F;
-                rt = (ushort)(a >> (int)s);
-                return 0;
+                return (ushort)(a >> (int)s);
             });
-
-            throw new Exception("Not reviewed");        
         }
 
         private void Execute(OpCodes.rotmi i)
         {
             uint s = (uint)(0 - RepLeftBit(i, 0)) & 0x0000003F;
-
-            ALUWord(m_registers[i.RA].Value, null, m_registers[i.RT].Value, (a, b, rt, carry) =>
-            {
-                rt = (ushort)(a >> (int)s);
-                return 0;
-            });
-
-            throw new Exception("Not reviewed");        
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (ushort)(a >> (int)s));
         }
 
         private void Execute(OpCodes.rotqmby i)
         {
             uint s = ((uint)(0 - m_registers[i.RB].Word & 0xf) & 0x1F) * 8;
 
-            m_registers[i.RT].Value.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
-            m_registers[i.RT].Value.high = m_registers[i.RA].Value.high >> (int)s;
+            RegisterValue tmp = new RegisterValue();
 
-            throw new Exception("Not reviewed");
+            tmp.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
+            tmp.high = m_registers[i.RA].Value.high >> (int)s;
+
+            m_registers[i.RT].Value = tmp;
         }
 
         private void Execute(OpCodes.rotqmbyi i)
         {
             uint s = ((uint)(0 - i.I7) & 0x1F) * 8;
 
-            m_registers[i.RT].Value.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
-            m_registers[i.RT].Value.high = m_registers[i.RA].Value.high >> (int)s;
+            RegisterValue tmp = new RegisterValue();
 
-            throw new Exception("Not reviewed");
+            tmp.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
+            tmp.high = m_registers[i.RA].Value.high >> (int)s;
+
+            m_registers[i.RT].Value = tmp;
         }
 
         private void Execute(OpCodes.rotqmbybi i)
         {
             uint s = ((uint)(0 - m_registers[i.RB].Word >> 3 & 0xf) & 0x1F) * 8;
 
-            m_registers[i.RT].Value.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
-            m_registers[i.RT].Value.high = m_registers[i.RA].Value.high >> (int)s;
+            RegisterValue tmp = new RegisterValue();
 
-            throw new Exception("Not reviewed");
+            tmp.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
+            tmp.high = m_registers[i.RA].Value.high >> (int)s;
+
+            m_registers[i.RT].Value = tmp;
         }
 
         private void Execute(OpCodes.rotqmbi i)
         {
-            uint s = (uint)(0 - m_registers[i.RB].Word & 0xf) & 0x0F;
+            uint s = (uint)(0 - m_registers[i.RB].Word) & 0x07;
 
-            m_registers[i.RT].Value.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
-            m_registers[i.RT].Value.high = m_registers[i.RA].Value.high >> (int)s;
+            RegisterValue tmp = new RegisterValue();
 
-            throw new Exception("Not reviewed");
+            tmp.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
+            tmp.high = m_registers[i.RA].Value.high >> (int)s;
+
+            m_registers[i.RT].Value = tmp;
         }
 
         private void Execute(OpCodes.rotqmbii i)
         {
-            uint s = (uint)(0 - i.I7) & 0x0F;
+            uint s = (uint)(0 - i.I7) & 0x07;
 
-            m_registers[i.RT].Value.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
-            m_registers[i.RT].Value.high = m_registers[i.RA].Value.high >> (int)s;
+            RegisterValue tmp = new RegisterValue();
 
-            throw new Exception("Not reviewed");
+            tmp.low = m_registers[i.RA].Value.low >> (int)s | m_registers[i.RA].Value.high << (int)(System.Runtime.InteropServices.Marshal.SizeOf(m_registers[i.RA].Value.high) - s);
+            tmp.high = m_registers[i.RA].Value.high >> (int)s;
+
+            m_registers[i.RT].Value = tmp;
         }
 
         private void Execute(OpCodes.rotmah i)
         {
-            ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) => {
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => {
                 ushort s = (ushort)((0 - b) & 0x001F);
 
-                if (a >> 16 == 1)
-                    rt = (ushort)(a >> (int)s | 0xFFFF << (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s));
+                if ((a & 0x8000) != 0)
+                    return (ushort)(a >> (int)s | 0xFFFF << (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s));
                 else
-                    rt = (ushort)(a >> (int)s);
-                return 0;
+                    return (ushort)(a >> (int)s);
+               
             });
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.rotmahi i)
         {
             ushort s = (ushort)((0 - RepLeftBit(i, 0)) & 0x001F);
 
-            ALUHalfWord(m_registers[i.RA].Value, null, m_registers[i.RT].Value, (a, b, rt, carry) => {
-                if (a >> 16 == 1)
-                    rt = (ushort)(a >> (int)s | 0xFFFF << (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s));
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
+            {
+                if ((a & 0x8000) != 0)
+                    return (ushort)(a >> (int)s | 0xFFFF << (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s));
                 else
-                    rt = (ushort)(a >> (int)s);
-                return 0;
+                    return (ushort)(a >> (int)s);
             });
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.rotma i)
         {
-            ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) =>
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) =>
             {
                 uint s = (uint)((0 - b) & 0x0000003F);
 
-                if (a >> 16 == 1)
-                    rt = (uint)(a >> (int)s | 0xFFFFFFFF << (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s));
+                if ((a & 0x80000000) != 0)
+                    return (uint)(a >> (int)s | 0xFFFFFFFF << (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s));
                 else
-                    rt = (uint)(a >> (int)s);
-                return 0;
+                    return (uint)(a >> (int)s);
             });
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.rotmai i)
         {
             uint s = (uint)((0 - RepLeftBit(i, 0)) & 0x0000003F);
 
-
-            ALUWord(m_registers[i.RA].Value, null, m_registers[i.RT].Value, (a, b, rt, carry) =>
+            m_registers[i.RT].Value = m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
-                if (a >> 16 == 1)
-                    rt = (uint)(a >> (int)s | 0xFFFFFFFF << (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s));
+                if ((a & 0x80000000) != 0)
+                    return (uint)(a >> (int)s | 0xFFFFFFFF << (int)(System.Runtime.InteropServices.Marshal.SizeOf(a) - s));
                 else
-                    rt = (uint)(a >> (int)s);
-                return 0;
+                    return (uint)(a >> (int)s);
             });
-
-            throw new Exception("Not reviewed");
         }
 
         #endregion
@@ -1490,50 +1454,38 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.heq i)
         {
-            if ((m_registers[i.RA].Word >> 4 & 0xf) == (m_registers[i.RB].Word >> 4 & 0xf))
+            if (m_registers[i.RA].Word == m_registers[i.RB].Word)
                 m_doRun = false;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.heqi i)
         {
-            if ((m_registers[i.RA].Word >> 4 & 0xf) == RepLeftBit(i, 0))
+            if (m_registers[i.RA].Word == RepLeftBit(i, 0))
                 m_doRun = false;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.hgt i)
         {
-            if ((int)(m_registers[i.RA].Word >> 4 & 0xf) > (int)(m_registers[i.RB].Word >> 4 & 0xf))
+            if ((int)(m_registers[i.RA].Word) > (int)(m_registers[i.RB].Word))
                 m_doRun = false;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.hgti i)
         {
-            if ((int)(m_registers[i.RA].Word >> 4 & 0xf) > (int)RepLeftBit(i, 0))
+            if ((int)(m_registers[i.RA].Word) > (int)RepLeftBit(i, 0))
                 m_doRun = false;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.hlgt i)
         {
-            if ((m_registers[i.RA].Word >> 4 & 0xf) > (m_registers[i.RB].Word >> 4 & 0xf))
+            if (m_registers[i.RA].Word > m_registers[i.RB].Word)
                 m_doRun = false;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.hlgti i)
         {
-            if ((m_registers[i.RA].Word >> 4 & 0xf) > RepLeftBit(i, 0))
+            if (m_registers[i.RA].Word > RepLeftBit(i, 0))
                 m_doRun = false;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.ceqb i)
@@ -1669,8 +1621,6 @@ namespace SPEEmulator
         {
             //TODO: Deal with interrupts
             this.PC = m_SRR0.Word;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.bisled i)
@@ -1686,10 +1636,11 @@ namespace SPEEmulator
             if (external event)
                 this.PC = t;
             else
-                this.PC = U;
+                this.PC = u;
             */
 
-            throw new Exception("Not reviewed");
+            //TODO: Fix if we support events
+            this.PC = u;
         }
 
         private void Execute(OpCodes.bisl i)
@@ -1745,8 +1696,6 @@ namespace SPEEmulator
                 this.PC = t & m_spe.LSLR & 0xfffffffc;
             else
                 this.PC = u;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.binz i)
@@ -1759,8 +1708,6 @@ namespace SPEEmulator
                 this.PC = t & m_spe.LSLR & 0xfffffffc;
             else
                 this.PC = u;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.bihz i)
@@ -1773,8 +1720,6 @@ namespace SPEEmulator
                 this.PC = t & m_spe.LSLR & 0xfffffffc;
             else
                 this.PC = u;
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.bihnz i)
@@ -1787,8 +1732,6 @@ namespace SPEEmulator
                 this.PC = t & m_spe.LSLR & 0xfffffffc;
             else
                 this.PC = u;
-
-            throw new Exception("Not reviewed");
         }
 
         #endregion
