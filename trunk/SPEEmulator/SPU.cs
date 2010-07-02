@@ -474,6 +474,74 @@ namespace SPEEmulator
 
             return x;
         }
+
+        private RegisterValue ALUSingle(RegisterValue a, RegisterValue b, RegisterValue c, Func<float, float, float, float> exec)
+        {
+            const int OP_SIZE = 4;
+            byte[] NULL = new byte[OP_SIZE];
+            RegisterValue rt = new RegisterValue(0);
+
+            byte[] a_b = a == null ? NULL : a.Value;
+            byte[] b_b = b == null ? NULL : b.Value;
+            byte[] c_b = c == null ? NULL : c.Value;
+
+            for (int j = 0; j < 16; j += OP_SIZE)
+            {
+                if (BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(a_b, j, OP_SIZE);
+                    Array.Reverse(b_b, j, OP_SIZE);
+                    Array.Reverse(c_b, j, OP_SIZE);
+                }
+
+                float aF = BitConverter.ToSingle(a_b, j);
+                float bF = BitConverter.ToSingle(b_b, j);
+                float cF = BitConverter.ToSingle(c_b, j);
+
+                byte[] tmp = BitConverter.GetBytes((float)exec(aF, bF, cF));
+                if (BitConverter.IsLittleEndian)
+                    Array.Reverse(tmp);
+
+                //TODO: Deal with overflow
+                Array.Copy(tmp, 0, rt.Value, j, tmp.Length);
+            }
+
+            return rt;
+        }
+
+        private RegisterValue ALUDouble(RegisterValue a, RegisterValue b, RegisterValue c, Func<double, double, double, double> exec)
+        {
+            const int OP_SIZE = 8;
+            byte[] NULL = new byte[OP_SIZE];
+            RegisterValue rt = new RegisterValue(0);
+
+            byte[] a_b = a == null ? NULL : a.Value;
+            byte[] b_b = b == null ? NULL : b.Value;
+            byte[] c_b = c == null ? NULL : c.Value;
+
+            for (int j = 0; j < 16; j += OP_SIZE)
+            {
+                if (BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(a_b, j, OP_SIZE);
+                    Array.Reverse(b_b, j, OP_SIZE);
+                    Array.Reverse(c_b, j, OP_SIZE);
+                }
+
+                double aF = BitConverter.ToDouble(a_b, j);
+                double bF = BitConverter.ToDouble(b_b, j);
+                double cF = BitConverter.ToDouble(c_b, j);
+
+                byte[] tmp = BitConverter.GetBytes((double)exec(aF, bF, cF));
+                if (BitConverter.IsLittleEndian)
+                    Array.Reverse(tmp);
+
+                //TODO: Deal with overflow
+                Array.Copy(tmp, 0, rt.Value, j, tmp.Length);
+            }
+
+            return rt;
+        }
         #endregion
 
         #region Memory—Load/Store Instructions
@@ -1769,224 +1837,68 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.fa i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
-
-                return BitConverter.ToUInt32(BitConverter.GetBytes(aF + bF), 0);
-            });
-
-            throw new Exception("Not reviewed");
-         }
+            m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) => a + b);
+        }
 
         private void Execute(OpCodes.dfa i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
+            m_registers[i.RT].Value = ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) => a + b);
 
-                return BitConverter.ToUInt64(BitConverter.GetBytes(aF + bF), 0);
-            });
-
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.fs i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
-
-                return BitConverter.ToUInt32(BitConverter.GetBytes(aF - bF), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) => a - b);
         }
 
         private void Execute(OpCodes.dfs i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
-
-                return BitConverter.ToUInt64(BitConverter.GetBytes(aF - bF), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) => a - b);
         }
 
         private void Execute(OpCodes.fm i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
-
-                return BitConverter.ToUInt32(BitConverter.GetBytes(aF * bF), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) => a * b);
         }
 
         private void Execute(OpCodes.dfm i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
-
-                return BitConverter.ToUInt64(BitConverter.GetBytes(aF * bF), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) => a * b);
         }
 
         private void Execute(OpCodes.fma i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RC].Value, (a, b, c, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                byte[] cB = BitConverter.GetBytes(c);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
-                float cF = BitConverter.ToSingle(cB, 0);
-
-                return BitConverter.ToUInt32(BitConverter.GetBytes((aF * bF) + cF), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RC].Value, (a, b, c) => (a * b) + c);
         }
 
         private void Execute(OpCodes.dfma i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                byte[] rtB = BitConverter.GetBytes(rt);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
-                double rtF = BitConverter.ToDouble(rtB, 0);
-
-                return BitConverter.ToUInt64(BitConverter.GetBytes((aF * bF) + rtF), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c) => (a * b) + c);
         }
 
         private void Execute(OpCodes.fnms i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RC].Value, (a, b, c, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                byte[] cB = BitConverter.GetBytes(c);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
-                float cF = BitConverter.ToSingle(cB, 0);
-
-                return BitConverter.ToUInt32(BitConverter.GetBytes(cF - (aF * bF)), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RC].Value, (a, b, c) => c - (a * b));
         }
 
         private void Execute(OpCodes.dfnms i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                byte[] rtB = BitConverter.GetBytes(rt);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
-                double rtF = BitConverter.ToDouble(rtB, 0);
-
-                return BitConverter.ToUInt64(BitConverter.GetBytes(rtF - (aF * bF)), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c) => c - (a * b));
         }
 
         private void Execute(OpCodes.fms i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RC].Value, (a, b, c, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                byte[] cB = BitConverter.GetBytes(c);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
-                float cF = BitConverter.ToSingle(cB, 0);
-
-                return BitConverter.ToUInt32(BitConverter.GetBytes((aF * bF) - cF), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RC].Value, (a, b, c) => (a * b) - c);
         }
 
         private void Execute(OpCodes.dfms i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                byte[] rtB = BitConverter.GetBytes(rt);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
-                double rtF = BitConverter.ToDouble(rtB, 0);
-
-                return BitConverter.ToUInt64(BitConverter.GetBytes((aF * bF) - rtF), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c) => (a * b) - c);
         }
 
         private void Execute(OpCodes.dfnma i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                byte[] rtB = BitConverter.GetBytes(rt);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
-                double rtF = BitConverter.ToDouble(rtB, 0);
-
-                return BitConverter.ToUInt64(BitConverter.GetBytes(rtF + (aF * bF)), 0);
-            });
-
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value = ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c) => -(c + (a * b)));
         }
 
         /*
@@ -2028,78 +1940,62 @@ namespace SPEEmulator
         */
         private void Execute(OpCodes.dfceq i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
+            ulong[] slots = new ulong[2];
+            int slot = 0;
 
-                if (aF == bF)
-                    return 0xffffffffffffffff;
-                else
-                    return 0x0000000000000000;
+            ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) =>
+            {
+                slots[slot++] = a == b ? 0xffffffffffffffff : 0x0000000000000000;
+                return 0;
             });
 
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value.high = slots[0];
+            m_registers[i.RT].Value.low = slots[1];
         }
 
         private void Execute(OpCodes.dfcmeq i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
+            ulong[] slots = new ulong[2];
+            int slot = 0;
 
-                if (Math.Abs(aF) == Math.Abs(bF))
-                    return 0xffffffffffffffff;
-                else
-                    return 0x0000000000000000;
+            ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) =>
+            {
+                slots[slot++] = Math.Abs(a) == Math.Abs(b) ? 0xffffffffffffffff : 0x0000000000000000;
+                return 0;
             });
 
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value.high = slots[0];
+            m_registers[i.RT].Value.low = slots[1];
         }
 
         private void Execute(OpCodes.dfcgt i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
+            ulong[] slots = new ulong[2];
+            int slot = 0;
 
-                if (aF > bF)
-                    return 0xffffffffffffffff;
-                else
-                    return 0x0000000000000000;
+            ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) =>
+            {
+                slots[slot++] = a > b ? 0xffffffffffffffff : 0x0000000000000000;
+                return 0;
             });
 
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value.high = slots[0];
+            m_registers[i.RT].Value.low = slots[1];
         }
 
         private void Execute(OpCodes.dfcmgt i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                double aF = BitConverter.ToDouble(aB, 0);
-                double bF = BitConverter.ToDouble(bB, 0);
+            ulong[] slots = new ulong[2];
+            int slot = 0;
 
-                if (Math.Abs(aF) > Math.Abs(bF))
-                    return 0xffffffffffffffff;
-                else
-                    return 0x0000000000000000;
+            ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) =>
+            {
+                slots[slot++] = Math.Abs(a) > Math.Abs(b) ? 0xffffffffffffffff : 0x0000000000000000;
+                return 0;
             });
 
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value.high = slots[0];
+            m_registers[i.RT].Value.low = slots[1];
         }
 
         /*
@@ -2110,78 +2006,63 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.fceq i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
+            uint[] slots = new uint[4];
+            int slot = 0;
 
-                if (aF == bF)
-                    return 0xfffffffff;
-                else
-                    return 0x000000000;
+            ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) =>
+            {
+                slots[slot++] = a == b ? 0xffffffffu : 0x00000000u;
+                return 0;
             });
 
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value.high = (slots[0] << 32) | (slots[1]);
+            m_registers[i.RT].Value.low = (slots[2] << 32) | (slots[3]);
         }
 
         private void Execute(OpCodes.fcmeq i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
+            uint[] slots = new uint[4];
+            int slot = 0;
 
-                if (Math.Abs(aF) == Math.Abs(bF))
-                    return 0xfffffffff;
-                else
-                    return 0x000000000;
+            ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) =>
+            {
+                slots[slot++] = Math.Abs(a) == Math.Abs(b) ? 0xffffffffu : 0x00000000u;
+                return 0;
             });
 
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value.high = (slots[0] << 32) | (slots[1]);
+            m_registers[i.RT].Value.low = (slots[2] << 32) | (slots[3]);
         }
 
         private void Execute(OpCodes.fcgt i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
+            uint[] slots = new uint[4];
+            int slot = 0;
 
-                if (aF > bF)
-                    return 0xfffffffff;
-                else
-                    return 0x000000000;
+            ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) =>
+            {
+                slots[slot++] = a > b ? 0xffffffffu : 0x00000000u;
+                return 0;
             });
 
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value.high = (slots[0] << 32) | (slots[1]);
+            m_registers[i.RT].Value.low = (slots[2] << 32) | (slots[3]);
         }
 
         private void Execute(OpCodes.fcmgt i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, rt, carry) =>
-            {
-                byte[] aB = BitConverter.GetBytes(a);
-                byte[] bB = BitConverter.GetBytes(b);
-                
-                float aF = BitConverter.ToSingle(aB, 0);
-                float bF = BitConverter.ToSingle(bB, 0);
+            uint[] slots = new uint[4];
+            int slot = 0;
 
-                if (Math.Abs(aF) > Math.Abs(bF))
-                    return 0xfffffffff;
-                else
-                    return 0x000000000;
+            ALUSingle(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c) =>
+            {
+                slots[slot++] = Math.Abs(a) > Math.Abs(b) ? 0xffffffffu : 0x00000000u;
+                return 0;
             });
 
-            throw new Exception("Not reviewed");
+            m_registers[i.RT].Value.high = (slots[0] << 32) | (slots[1]);
+            m_registers[i.RT].Value.low = (slots[2] << 32) | (slots[3]);
+
         }
 
         /*
