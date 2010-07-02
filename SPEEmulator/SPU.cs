@@ -2283,7 +2283,7 @@ namespace SPEEmulator
                 {
                     m_spe.RaiseMissingMethodError(string.Format("The posix method {0} is not implemented", func));
                 }
-                else if (handler == 1) //Libea
+                else if (handler == 4) //Libea
                 {
                     m_spe.RaiseMissingMethodError(string.Format("The libea method {0} is not implemented", func));
                 }

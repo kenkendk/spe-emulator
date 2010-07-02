@@ -416,6 +416,19 @@ namespace SPEEmulator
         }
 
         /// <summary>
+        /// Writes a word value to LS, starting at the specified offset
+        /// </summary>
+        /// <param name="offset">The starting offset</param>
+        /// <param name="value">The value to write</param>
+        public void WriteLSWord(uint offset, uint value)
+        {
+            LS[offset] = (byte)((value >> (8 * 3)) & 0xff);
+            LS[offset + 1] = (byte)((value >> (8 * 2)) & 0xff);
+            LS[offset + 2] = (byte)((value >> (8 * 1)) & 0xff);
+            LS[offset + 3] = (byte)((value >> (8 * 0)) & 0xff);
+        }
+
+        /// <summary>
         /// Reads a zero terminated string from LS
         /// </summary>
         /// <param name="offset">The offset to start reading</param>

@@ -52,6 +52,8 @@
             this.OutMboxValue = new System.Windows.Forms.NumericUpDown();
             this.SimulationControls = new System.Windows.Forms.Panel();
             this.SimulationInteractionControls = new System.Windows.Forms.Panel();
+            this.label3 = new System.Windows.Forms.Label();
+            this.PrintCodeExecution = new System.Windows.Forms.CheckBox();
             this.CILBrowsePanel = new System.Windows.Forms.Panel();
             this.ELFBrowsePanel = new System.Windows.Forms.Panel();
             this.DisassembleElf = new System.Windows.Forms.Button();
@@ -172,13 +174,13 @@
             this.OutputText.Name = "OutputText";
             this.OutputText.ReadOnly = true;
             this.OutputText.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.OutputText.Size = new System.Drawing.Size(419, 226);
+            this.OutputText.Size = new System.Drawing.Size(419, 203);
             this.OutputText.TabIndex = 1;
             // 
             // ReadNormalMboxButton
             // 
             this.ReadNormalMboxButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.ReadNormalMboxButton.Location = new System.Drawing.Point(208, 9);
+            this.ReadNormalMboxButton.Location = new System.Drawing.Point(208, 32);
             this.ReadNormalMboxButton.Name = "ReadNormalMboxButton";
             this.ReadNormalMboxButton.Size = new System.Drawing.Size(75, 23);
             this.ReadNormalMboxButton.TabIndex = 2;
@@ -190,7 +192,7 @@
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(8, 9);
+            this.label1.Location = new System.Drawing.Point(8, 32);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(68, 13);
             this.label1.TabIndex = 0;
@@ -200,7 +202,7 @@
             // 
             this.NormalMboxStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.NormalMboxStatus.AutoSize = true;
-            this.NormalMboxStatus.Location = new System.Drawing.Point(88, 9);
+            this.NormalMboxStatus.Location = new System.Drawing.Point(88, 32);
             this.NormalMboxStatus.Name = "NormalMboxStatus";
             this.NormalMboxStatus.Size = new System.Drawing.Size(63, 13);
             this.NormalMboxStatus.TabIndex = 1;
@@ -210,7 +212,7 @@
             // 
             this.AutoReadNormalMbox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.AutoReadNormalMbox.AutoSize = true;
-            this.AutoReadNormalMbox.Location = new System.Drawing.Point(288, 9);
+            this.AutoReadNormalMbox.Location = new System.Drawing.Point(288, 32);
             this.AutoReadNormalMbox.Name = "AutoReadNormalMbox";
             this.AutoReadNormalMbox.Size = new System.Drawing.Size(97, 17);
             this.AutoReadNormalMbox.TabIndex = 3;
@@ -222,7 +224,7 @@
             // 
             this.AutoReadIntrMbox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.AutoReadIntrMbox.AutoSize = true;
-            this.AutoReadIntrMbox.Location = new System.Drawing.Point(288, 33);
+            this.AutoReadIntrMbox.Location = new System.Drawing.Point(288, 56);
             this.AutoReadIntrMbox.Name = "AutoReadIntrMbox";
             this.AutoReadIntrMbox.Size = new System.Drawing.Size(97, 17);
             this.AutoReadIntrMbox.TabIndex = 7;
@@ -234,7 +236,7 @@
             // 
             this.IntrMboxStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.IntrMboxStatus.AutoSize = true;
-            this.IntrMboxStatus.Location = new System.Drawing.Point(88, 33);
+            this.IntrMboxStatus.Location = new System.Drawing.Point(88, 56);
             this.IntrMboxStatus.Name = "IntrMboxStatus";
             this.IntrMboxStatus.Size = new System.Drawing.Size(63, 13);
             this.IntrMboxStatus.TabIndex = 5;
@@ -244,7 +246,7 @@
             // 
             this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(8, 33);
+            this.label5.Location = new System.Drawing.Point(8, 56);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(50, 13);
             this.label5.TabIndex = 4;
@@ -253,7 +255,7 @@
             // ReadIntrMboxButton
             // 
             this.ReadIntrMboxButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.ReadIntrMboxButton.Location = new System.Drawing.Point(208, 33);
+            this.ReadIntrMboxButton.Location = new System.Drawing.Point(208, 56);
             this.ReadIntrMboxButton.Name = "ReadIntrMboxButton";
             this.ReadIntrMboxButton.Size = new System.Drawing.Size(75, 23);
             this.ReadIntrMboxButton.TabIndex = 6;
@@ -265,7 +267,7 @@
             // 
             this.OutMboxStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.OutMboxStatus.AutoSize = true;
-            this.OutMboxStatus.Location = new System.Drawing.Point(88, 65);
+            this.OutMboxStatus.Location = new System.Drawing.Point(88, 88);
             this.OutMboxStatus.Name = "OutMboxStatus";
             this.OutMboxStatus.Size = new System.Drawing.Size(63, 13);
             this.OutMboxStatus.TabIndex = 9;
@@ -275,7 +277,7 @@
             // 
             this.label7.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(8, 65);
+            this.label7.Location = new System.Drawing.Point(8, 88);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(52, 13);
             this.label7.TabIndex = 8;
@@ -284,7 +286,7 @@
             // WriteOutMboxButton
             // 
             this.WriteOutMboxButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.WriteOutMboxButton.Location = new System.Drawing.Point(208, 65);
+            this.WriteOutMboxButton.Location = new System.Drawing.Point(208, 88);
             this.WriteOutMboxButton.Name = "WriteOutMboxButton";
             this.WriteOutMboxButton.Size = new System.Drawing.Size(75, 23);
             this.WriteOutMboxButton.TabIndex = 10;
@@ -295,7 +297,7 @@
             // OutMboxValue
             // 
             this.OutMboxValue.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.OutMboxValue.Location = new System.Drawing.Point(288, 65);
+            this.OutMboxValue.Location = new System.Drawing.Point(288, 88);
             this.OutMboxValue.Name = "OutMboxValue";
             this.OutMboxValue.Size = new System.Drawing.Size(96, 20);
             this.OutMboxValue.TabIndex = 11;
@@ -313,6 +315,7 @@
             // 
             // SimulationInteractionControls
             // 
+            this.SimulationInteractionControls.Controls.Add(this.label3);
             this.SimulationInteractionControls.Controls.Add(this.OutMboxValue);
             this.SimulationInteractionControls.Controls.Add(this.OutMboxStatus);
             this.SimulationInteractionControls.Controls.Add(this.label7);
@@ -327,10 +330,32 @@
             this.SimulationInteractionControls.Controls.Add(this.ReadNormalMboxButton);
             this.SimulationInteractionControls.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.SimulationInteractionControls.Enabled = false;
-            this.SimulationInteractionControls.Location = new System.Drawing.Point(0, 239);
+            this.SimulationInteractionControls.Location = new System.Drawing.Point(0, 216);
             this.SimulationInteractionControls.Name = "SimulationInteractionControls";
-            this.SimulationInteractionControls.Size = new System.Drawing.Size(419, 96);
+            this.SimulationInteractionControls.Size = new System.Drawing.Size(419, 119);
             this.SimulationInteractionControls.TabIndex = 2;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(344, 8);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(62, 13);
+            this.label3.TabIndex = 13;
+            this.label3.Text = "PC: 0x0000";
+            // 
+            // PrintCodeExecution
+            // 
+            this.PrintCodeExecution.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.PrintCodeExecution.AutoSize = true;
+            this.PrintCodeExecution.Checked = true;
+            this.PrintCodeExecution.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.PrintCodeExecution.Location = new System.Drawing.Point(296, 8);
+            this.PrintCodeExecution.Name = "PrintCodeExecution";
+            this.PrintCodeExecution.Size = new System.Drawing.Size(123, 17);
+            this.PrintCodeExecution.TabIndex = 12;
+            this.PrintCodeExecution.Text = "Print code execution";
+            this.PrintCodeExecution.UseVisualStyleBackColor = true;
             // 
             // CILBrowsePanel
             // 
@@ -382,6 +407,7 @@
             // SimulationButtonPanel
             // 
             this.SimulationButtonPanel.Controls.Add(this.PauseButton);
+            this.SimulationButtonPanel.Controls.Add(this.PrintCodeExecution);
             this.SimulationButtonPanel.Controls.Add(this.StartButton);
             this.SimulationButtonPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.SimulationButtonPanel.Location = new System.Drawing.Point(0, 383);
@@ -407,6 +433,7 @@
             this.Controls.Add(this.SimulationControls);
             this.Controls.Add(this.SimulationButtonPanel);
             this.Controls.Add(this.FilenamePanel);
+            this.MinimumSize = new System.Drawing.Size(435, 456);
             this.Name = "Simulator";
             this.Text = "SPE Simulator";
             this.Load += new System.EventHandler(this.Simulator_Load);
@@ -422,6 +449,7 @@
             this.FilenamePanel.ResumeLayout(false);
             this.FilenamePanel.PerformLayout();
             this.SimulationButtonPanel.ResumeLayout(false);
+            this.SimulationButtonPanel.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -459,6 +487,8 @@
         private System.Windows.Forms.Button DisassembleElf;
         private System.Windows.Forms.SaveFileDialog saveFileDialog;
         private System.Windows.Forms.Panel SimulationInteractionControls;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.CheckBox PrintCodeExecution;
     }
 }
 

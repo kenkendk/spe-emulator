@@ -40,6 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\thirdparty\printf\Tools.cs">
+      <Link>Tools.cs</Link>
+    </Compile>
     <Compile Include="C99DefaultHandler.cs" />
     <Compile Include="ELFReader.cs" />
     <Compile Include="MFC.cs" />
@@ -62,7 +65,6 @@
     <Compile Include="Register.cs" />
     <Compile Include="SPEProcessor.cs" />
     <Compile Include="SPU.cs" />
-    <Compile Include="Tools.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
