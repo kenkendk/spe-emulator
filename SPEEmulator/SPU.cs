@@ -544,6 +544,21 @@ namespace SPEEmulator
         }
         #endregion
 
+        #region Sign Extend
+        private ushort SignExtend(byte b)
+        {
+            return (b & 0x80) == 0 ? (ushort)b : (ushort)(0xff00u | b);
+        }
+        private uint SignExtend(ushort b)
+        {
+            return (b & 0x8000) == 0 ? (uint)b : (uint)(0xffff0000u | b);
+        }
+        private ulong SignExtend(uint b)
+        {
+            return (b & 0x80000000) == 0 ? (ulong)b : (ulong)(0xffffffff00000000u | b);
+        }
+        #endregion
+
         #region Memory—Load/Store Instructions
         private void Execute(OpCodes.lqd i)
         {
@@ -701,8 +716,8 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.fsmbi i)
         {
-            for (int j = 0; j < 15; j++)
-                m_registers[i.RT].Value.Value[j] = (byte)(((i.I16 >> j) & 0x1) == 0 ? 0x00 : 0xff);
+            for (int j = 0; j < 16; j++)
+                m_registers[i.RT].Value.Value[j] = (byte)(((i.I16 >> (15 - j)) & 0x1) == 0 ? 0x00 : 0xff);
         }
         #endregion
 
@@ -789,10 +804,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.mpy i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => { 
-                uint tmp = ((a & 0xffff) * (b & 0xffff));
-                return ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
-            });
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => SignExtend((ushort)(a & 0xffff)) * SignExtend((b & 0xffff)));
         }
 
         private void Execute(OpCodes.mpyu i)
@@ -802,12 +814,8 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.mpyi i)
         {
-            ushort t = (ushort)(RepLeftBit(i, 0) & 0xffff);
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
-            {
-                var tmp = ((a & 0xffff) * t);
-                return ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
-            });
+            uint t = SignExtend((ushort)(RepLeftBit(i, 0) & 0xffff));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => SignExtend((ushort)(a & 0xffff)) * t);
         }
 
         private void Execute(OpCodes.mpyui i)
@@ -818,60 +826,35 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.mpya i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) =>
-            {
-                uint tmp = ((a & 0xffff) * (b & 0xffff));
-                tmp = ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
-                return tmp + c;
-            });
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => SignExtend((ushort)(a & 0xffff)) * SignExtend((b & 0xffff)) + c);
         }
 
         private void Execute(OpCodes.mpyh i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => {
-                var tmp = a >> 16;
-                var tmp2 = b & 0xffff;
-                var tmp3 = tmp * tmp2;
-
-                tmp3 = ((tmp & 0x8000) != (tmp2 & 0x8000)) ? (~tmp3 + 1) : tmp3;
-                return tmp3 << 16;
-            });
-
+            //Sign extend not required because we shift the sign bits out anyway
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => ((a >> 16) * (b & 0xffff)) << 16);
         }
 
         private void Execute(OpCodes.mpys i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => {
-                var tmp = ((a & 0xffff) * (b & 0xffff));
-                tmp = ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) =>
+            {
+                var tmp = SignExtend((ushort)(a & 0xffff)) * SignExtend((b & 0xffff));
 
                 tmp = tmp >> 16;
 
-                if ((tmp & 0x8000) != 0)
-                    return tmp | 0xffff0000;
-                else
-                    return tmp;
+                return SignExtend((ushort)tmp);
             });
         }
 
         private void Execute(OpCodes.mpyhh i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => {
-                var tmp = ((a >> 16) * (b >> 16));
-                tmp = ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
-                return tmp;
-            });
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => SignExtend((ushort)(a >> 16)) * SignExtend((ushort)(b >> 16)));
         }
 
         private void Execute(OpCodes.mpyhha i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, t, carry) =>
-            {
-                var tmp = ((a >> 16) * (b >> 16));
-                tmp = ((a & 0x8000) != (b & 0x8000)) ? (~tmp + 1) : tmp;
-                tmp += t;
-                return tmp;
-            });
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, t, carry) => (SignExtend((ushort)(a >> 16)) * SignExtend((ushort)(b >> 16))) + t);
         }
 
         private void Execute(OpCodes.mpyhhu i)
