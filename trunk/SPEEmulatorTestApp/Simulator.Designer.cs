@@ -59,6 +59,7 @@
             this.DisassembleElf = new System.Windows.Forms.Button();
             this.FilenamePanel = new System.Windows.Forms.Panel();
             this.SimulationButtonPanel = new System.Windows.Forms.Panel();
+            this.StepButton = new System.Windows.Forms.Button();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
             ((System.ComponentModel.ISupportInitialize)(this.OutMboxValue)).BeginInit();
@@ -406,6 +407,7 @@
             // 
             // SimulationButtonPanel
             // 
+            this.SimulationButtonPanel.Controls.Add(this.StepButton);
             this.SimulationButtonPanel.Controls.Add(this.PauseButton);
             this.SimulationButtonPanel.Controls.Add(this.PrintCodeExecution);
             this.SimulationButtonPanel.Controls.Add(this.StartButton);
@@ -414,6 +416,17 @@
             this.SimulationButtonPanel.Name = "SimulationButtonPanel";
             this.SimulationButtonPanel.Size = new System.Drawing.Size(419, 35);
             this.SimulationButtonPanel.TabIndex = 2;
+            // 
+            // StepButton
+            // 
+            this.StepButton.Enabled = false;
+            this.StepButton.Location = new System.Drawing.Point(8, 9);
+            this.StepButton.Name = "StepButton";
+            this.StepButton.Size = new System.Drawing.Size(75, 23);
+            this.StepButton.TabIndex = 13;
+            this.StepButton.Text = "Step";
+            this.StepButton.UseVisualStyleBackColor = true;
+            this.StepButton.Click += new System.EventHandler(this.StepButton_Click);
             // 
             // openFileDialog
             // 
@@ -489,6 +502,7 @@
         private System.Windows.Forms.Panel SimulationInteractionControls;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox PrintCodeExecution;
+        private System.Windows.Forms.Button StepButton;
     }
 }
 

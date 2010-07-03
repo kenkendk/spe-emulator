@@ -73,7 +73,7 @@ namespace SPEEmulatorTestApp
                 m_spe.Warning += new SPEEmulator.WarningEventDelegate(SPE_Warning);
                 m_spe.Exit += new SPEEmulator.ExitEventDelegate(SPE_Exit);
 
-                //m_spe.SPU.Breakpoints = new uint[] { 0x0174 };
+                //m_spe.SPU.Breakpoints = new uint[] { 0x2e4 };
 
                 m_spe.MboxWritten += new SPEEmulator.StatusEventDelegate(SPEMboxWritten);
                 m_spe.IntrMboxWritten += new SPEEmulator.StatusEventDelegate(SPEIntrMboxWritten);
@@ -180,6 +180,7 @@ namespace SPEEmulatorTestApp
                     FilenamePanel.Enabled = false;
                     StartButton.Text = "Stop";
                     PauseButton.Text = "Pause";
+                    StepButton.Enabled = true;
                     PauseButton.Enabled = true;
                 }
                 else if (spe.State == SPEEmulator.SPEState.Terminated)
@@ -189,6 +190,7 @@ namespace SPEEmulatorTestApp
                     FilenamePanel.Enabled = true;
                     StartButton.Text = "Start";
                     PauseButton.Enabled = false;
+                    StepButton.Enabled = false; 
                     m_spe = null;
                 }
                 else if (spe.State == SPEEmulator.SPEState.Paused)
@@ -294,6 +296,11 @@ namespace SPEEmulatorTestApp
                 }
             }
 
+        }
+
+        private void StepButton_Click(object sender, EventArgs e)
+        {
+            m_spe.Step();
         }
     }
 }

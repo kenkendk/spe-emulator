@@ -241,6 +241,7 @@ namespace SPEEmulator
             if (SPEStarted != null)
                 SPEStarted(this);
 
+            m_spu.SingleStep = false;
             m_spu.Run();
             //m_mfc.Start();
 
@@ -284,7 +285,8 @@ namespace SPEEmulator
 
                 m_state = SPEState.Paused;
             }
-            
+
+            m_spu.SingleStep = true;
             m_spu.Pause();
             //m_mfc.Pause();
 
@@ -308,11 +310,30 @@ namespace SPEEmulator
                 m_state = SPEState.Running;
             }
 
+            m_spu.SingleStep = false;
             m_spu.Resume();
             //m_mfc.Resume();
 
             if (SPEResumed != null)
                 SPEResumed(this);
+        }
+
+        /// <summary>
+        /// Advances the SPU with one instruction
+        /// </summary>
+        public void Step()
+        {
+            lock (m_lock)
+            {
+                if (m_state == SPEState.NotStarted || m_state == SPEState.Terminated)
+                    throw new InvalidOperationException(string.Format("Cannot resume the SPE while state is {0}", m_state));
+
+                if (m_state == SPEState.Running)
+                    return;
+            }
+
+            m_spu.SingleStep = true; 
+            m_spu.Resume();
         }
 
         /// <summary>
