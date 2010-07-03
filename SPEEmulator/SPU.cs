@@ -91,6 +91,7 @@ namespace SPEEmulator
         private System.Threading.Thread m_thread;
         private object m_lock = new object();
         private System.Threading.ManualResetEvent m_event;
+        private volatile bool m_singleStep = false;
 
         public SPU(SPEProcessor spe, uint registercount = 128)
         {
@@ -118,6 +119,15 @@ namespace SPEEmulator
                 if (!funcs.Exists(x => string.Equals(x, m.ToString(), StringComparison.InvariantCultureIgnoreCase)))
                     throw new Exception(string.Format("The instruction {0} cannot be executed because no method supports it", m.ToString()));
 #endif
+        }
+
+        /// <summary>
+        /// Gets or sets the singlestep flag
+        /// </summary>
+        public bool SingleStep
+        {
+            get { return m_singleStep; }
+            set { m_singleStep = value; }
         }
 
         /// <summary>
@@ -186,6 +196,9 @@ namespace SPEEmulator
                     m_event.WaitOne();
                     if (!m_doRun)
                         break;
+                    
+                    if (m_singleStep)
+                        m_event.Reset();
 
                     if (PC < m_codeSize != inCodeSegment)
                     {
