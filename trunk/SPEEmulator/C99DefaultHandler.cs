@@ -59,14 +59,13 @@ namespace SPEEmulator
             C99Function pfunc = (C99Function)((func >> 24) & 0xff);
             uint ls_args = func & 0xffffff;
 
-            ls_args += 16; //TODO: Figure out why this is required
-
             switch (pfunc)
             {
                 case C99Function.VPRINTF:
                     {
                         string format = spe.ReadLSString(spe.ReadLSWord(LS_ARG_ADDR(ls_args, 0)));
                         spe.RaisePrintfIssued(printf(spe, ls_args, format));
+                        spe.WriteLSWord(LS_ARG_ADDR(ls_args, 0), 0u);
                         return true;
                     }
                 default:
@@ -85,15 +84,15 @@ namespace SPEEmulator
         private static string printf(SPEProcessor spe, uint ls_args, string format)
         {
             List<object> data = new List<object>();
-            //TODO: This regexp does not support all formats known to printf
-            System.Text.RegularExpressions.Regex r = new System.Text.RegularExpressions.Regex(@"\%[cdieEfFgGhlpouxXs]");
+            System.Text.RegularExpressions.Regex r = new System.Text.RegularExpressions.Regex(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?(?<token>[dioxXucsfeEgGpn%])"); ;
+            //"%[parameter][flags][width][.precision][length]type"
 
             uint offset = spe.ReadLSWord(LS_ARG_ADDR(ls_args, 1));
             uint caller_stack = spe.ReadLSWord(LS_ARG_ADDR(ls_args, 1) + 16);
 
             foreach (System.Text.RegularExpressions.Match m in r.Matches(format))
             {
-                switch (m.Value[1])
+                switch (m.Groups["token"].Value[0])
                 {
                     case 'c':
                     case 'd':
@@ -111,9 +110,6 @@ namespace SPEEmulator
                     case 'h':
                         data.Add((int)spe.ReadLSWord(offset));
                         break;
-                    case 'l':
-                        //TODO: fix this
-                        throw new Exception("TODO: support l (L) in printf");
                     case 'p':
                     case 'o':
                     case 'u':
