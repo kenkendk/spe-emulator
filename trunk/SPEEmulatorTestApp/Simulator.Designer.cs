@@ -419,7 +419,6 @@
             // 
             // StepButton
             // 
-            this.StepButton.Enabled = false;
             this.StepButton.Location = new System.Drawing.Point(8, 9);
             this.StepButton.Name = "StepButton";
             this.StepButton.Size = new System.Drawing.Size(75, 23);
@@ -449,7 +448,6 @@
             this.MinimumSize = new System.Drawing.Size(435, 456);
             this.Name = "Simulator";
             this.Text = "SPE Simulator";
-            this.Load += new System.EventHandler(this.Simulator_Load);
             ((System.ComponentModel.ISupportInitialize)(this.OutMboxValue)).EndInit();
             this.SimulationControls.ResumeLayout(false);
             this.SimulationControls.PerformLayout();

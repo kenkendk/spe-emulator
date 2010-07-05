@@ -49,56 +49,12 @@ namespace SPEEmulatorTestApp
             ReadIntrMboxButton.Enabled = !AutoReadIntrMbox.Checked;
         }
 
-        private void Simulator_Load(object sender, EventArgs e)
-        {
-        }
-
         private void StartButton_Click(object sender, EventArgs e)
         {
             if (m_spe == null || m_spe.State == SPEEmulator.SPEState.NotStarted || m_spe.State == SPEEmulator.SPEState.Terminated)
-            {
-                OutputText.Text = "";
-
-                m_spe = new SPEEmulator.SPEProcessor();
-
-                m_spe.SPEStarted += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
-                m_spe.SPEStopped += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
-                m_spe.SPEPaused += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
-                m_spe.SPEResumed += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
-
-                m_spe.InstructionExecuting += new SPEEmulator.InformationEventDelegate(SPE_InstructionExecuting);
-                m_spe.MissingMethodError += new SPEEmulator.InformationEventDelegate(SPE_MissingMethodError);
-                m_spe.InvalidOpCodeError += new SPEEmulator.InformationEventDelegate(SPE_InvalidOpCodeError);
-                m_spe.PrintfIssued += new SPEEmulator.InformationEventDelegate(SPE_PrintfIssued);
-                m_spe.Warning += new SPEEmulator.WarningEventDelegate(SPE_Warning);
-                m_spe.Exit += new SPEEmulator.ExitEventDelegate(SPE_Exit);
-
-                //m_spe.SPU.Breakpoints = new uint[] { 0x2e4 };
-
-                m_spe.MboxWritten += new SPEEmulator.StatusEventDelegate(SPEMboxWritten);
-                m_spe.IntrMboxWritten += new SPEEmulator.StatusEventDelegate(SPEIntrMboxWritten);
-                m_spe.InMboxRead += new SPEEmulator.StatusEventDelegate(SPEInMboxRead);
-
-                try
-                {
-                    using (System.IO.FileStream fs = System.IO.File.OpenRead(ELFFilename.Text))
-                    {
-                        SPEEmulator.ELFReader r = new SPEEmulator.ELFReader(fs);
-                        r.SetupExecutionEnv(m_spe);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(this, string.Format("Unable to load file: {0}", ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                m_spe.Start();
-            }
+                Start(false);
             else
-            {
                 m_spe.Stop();
-            }
         }
 
         private void SPE_Exit(SPEEmulator.SPEProcessor sender, uint exitcode)
@@ -175,12 +131,12 @@ namespace SPEEmulatorTestApp
                 if (spe.State == SPEEmulator.SPEState.Running)
                 {
                     WriteOutputText("***** SPE is now running *****" + Environment.NewLine);
+                    label3.Text = "PC: 0x0000";
                     SimulationControls.Enabled = true;
                     SimulationInteractionControls.Enabled = true;
                     FilenamePanel.Enabled = false;
                     StartButton.Text = "Stop";
                     PauseButton.Text = "Pause";
-                    StepButton.Enabled = true;
                     PauseButton.Enabled = true;
                 }
                 else if (spe.State == SPEEmulator.SPEState.Terminated)
@@ -190,7 +146,6 @@ namespace SPEEmulatorTestApp
                     FilenamePanel.Enabled = true;
                     StartButton.Text = "Start";
                     PauseButton.Enabled = false;
-                    StepButton.Enabled = false; 
                     m_spe = null;
                 }
                 else if (spe.State == SPEEmulator.SPEState.Paused)
@@ -298,9 +253,57 @@ namespace SPEEmulatorTestApp
 
         }
 
+        private void Start(bool singleStepping)
+        {
+            if (m_spe == null || m_spe.State == SPEEmulator.SPEState.NotStarted || m_spe.State == SPEEmulator.SPEState.Terminated)
+            {
+                OutputText.Text = "";
+
+                m_spe = new SPEEmulator.SPEProcessor();
+
+                m_spe.SPEStarted += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
+                m_spe.SPEStopped += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
+                m_spe.SPEPaused += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
+                m_spe.SPEResumed += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
+
+                m_spe.InstructionExecuting += new SPEEmulator.InformationEventDelegate(SPE_InstructionExecuting);
+                m_spe.MissingMethodError += new SPEEmulator.InformationEventDelegate(SPE_MissingMethodError);
+                m_spe.InvalidOpCodeError += new SPEEmulator.InformationEventDelegate(SPE_InvalidOpCodeError);
+                m_spe.PrintfIssued += new SPEEmulator.InformationEventDelegate(SPE_PrintfIssued);
+                m_spe.Warning += new SPEEmulator.WarningEventDelegate(SPE_Warning);
+                m_spe.Exit += new SPEEmulator.ExitEventDelegate(SPE_Exit);
+
+                //m_spe.SPU.Breakpoints = new uint[] { 0x2e4 };
+
+                m_spe.MboxWritten += new SPEEmulator.StatusEventDelegate(SPEMboxWritten);
+                m_spe.IntrMboxWritten += new SPEEmulator.StatusEventDelegate(SPEIntrMboxWritten);
+                m_spe.InMboxRead += new SPEEmulator.StatusEventDelegate(SPEInMboxRead);
+
+                try
+                {
+                    using (System.IO.FileStream fs = System.IO.File.OpenRead(ELFFilename.Text))
+                    {
+                        SPEEmulator.ELFReader r = new SPEEmulator.ELFReader(fs);
+                        r.SetupExecutionEnv(m_spe);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, string.Format("Unable to load file: {0}", ex.ToString()), Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                m_spe.Start(singleStepping);
+            }
+        }
+
+
         private void StepButton_Click(object sender, EventArgs e)
         {
-            m_spe.Step();
+            if (m_spe == null || m_spe.State == SPEEmulator.SPEState.NotStarted || m_spe.State == SPEEmulator.SPEState.Terminated)
+                Start(true);
+            else
+                m_spe.Step();
         }
     }
 }
