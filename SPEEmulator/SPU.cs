@@ -2255,10 +2255,10 @@ namespace SPEEmulator
         {
             switch ((Channels)i.RA)
             {
-                case Channels.SPU_WrOutIntrMbox:
+                case Channels.SPU_WrOutMbox:
                     m_spe.SPU_WriteOutMbox(m_registers[i.RT].Word);
                     break;
-                case Channels.SPU_WrOutMbox:
+                case Channels.SPU_WrOutIntrMbox:
                     m_spe.SPU_WriteOutIntrMbox(m_registers[i.RT].Word);
                     break;
                 case Channels.SPU_WrSRR0:
