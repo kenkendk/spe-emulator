@@ -2213,20 +2213,61 @@ namespace SPEEmulator
         #endregion
 
         #region Channel Instructions
-
-        /*
+                
         private void Execute(OpCodes.rdch i)
         {
+            switch ((Channels)i.RA)
+            {
+                case Channels.SPU_RdInMbox:
+                    m_registers[i.RT].Value = new RegisterValue(0);
+                    m_registers[i.RT].Word = m_spe.SPU_ReadInMbox();
+                    break;
+                case Channels.SPU_RdSRR0:
+                    m_registers[i.RT].Value = new RegisterValue(m_SRR0.Value);
+                    break;
+                default:
+                    throw new Exception(string.Format("Unsupported {0} channel operation: 0x{1:x2}", i.Mnemonic, (byte)i.RA));
+            }
         }
 
         private void Execute(OpCodes.rchcnt i)
         {
+            switch ((Channels)i.RA)
+            {
+                case Channels.SPU_RdInMbox:
+                    m_registers[i.RT].Value = new RegisterValue(0);
+                    m_registers[i.RT].Word = m_spe.SPU_InMboxSize;
+                    break;
+                case Channels.SPU_WrOutIntrMbox:
+                    m_registers[i.RT].Value = new RegisterValue(0);
+                    m_registers[i.RT].Word = m_spe.SPU_OutMboxSize;
+                    break;
+                case Channels.SPU_WrOutMbox:
+                    m_registers[i.RT].Value = new RegisterValue(0);
+                    m_registers[i.RT].Word = m_spe.SPU_OutIntrMboxSize;
+                    break;
+                default:
+                    throw new Exception(string.Format("Unsupported {0} channel operation: 0x{1:x2}", i.Mnemonic, (byte)i.RA));
+            }
         }
 
         private void Execute(OpCodes.wrch i)
         {
+            switch ((Channels)i.RA)
+            {
+                case Channels.SPU_WrOutIntrMbox:
+                    m_spe.SPU_WriteOutMbox(m_registers[i.RT].Word);
+                    break;
+                case Channels.SPU_WrOutMbox:
+                    m_spe.SPU_WriteOutIntrMbox(m_registers[i.RT].Word);
+                    break;
+                case Channels.SPU_WrSRR0:
+                    m_SRR0.Value = new RegisterValue(m_registers[i.RT].Value);
+                    break;
+                default:
+                    throw new Exception(string.Format("Unsupported {0} channel operation: 0x{1:x2}", i.Mnemonic, (byte)i.RA));
+            }
         }
-        */
 
         #endregion
     }

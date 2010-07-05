@@ -106,20 +106,35 @@ namespace SPEEmulatorTestApp
 
         private void SPEInMboxRead(SPEEmulator.SPEProcessor spe)
         {
-            int s = spe.InMboxSize;
-            OutMboxStatus.Text = string.Format("{0} {1}", s, s != 1 ? "messages" : "message");
+            if (this.InvokeRequired)
+                this.Invoke(new SPEEmulator.StatusEventDelegate(SPEInMboxRead), spe);
+            else
+            {
+                int s = spe.InMboxSize;
+                OutMboxStatus.Text = string.Format("{0} {1}", s, s != 1 ? "messages" : "message");
+            }
         }
 
         private void SPEIntrMboxWritten(SPEEmulator.SPEProcessor spe)
         {
-            int s = spe.MboxSize;
-            IntrMboxStatus.Text = string.Format("{0} {1}", s, s != 1 ? "messages" : "message");
+            if (this.InvokeRequired)
+                this.Invoke(new SPEEmulator.StatusEventDelegate(SPEIntrMboxWritten), spe);
+            else
+            {
+                int s = spe.MboxIntrSize;
+                IntrMboxStatus.Text = string.Format("{0} {1}", s, s != 1 ? "messages" : "message");
+            }
         }
 
         private void SPEMboxWritten(SPEEmulator.SPEProcessor spe)
         {
-            int s = spe.MboxIntrSize;
-            NormalMboxStatus.Text = string.Format("{0} {1}", s, s != 1 ? "messages" : "message");
+            if (this.InvokeRequired)
+                this.Invoke(new SPEEmulator.StatusEventDelegate(SPEMboxWritten), spe);
+            else
+            {
+                int s = spe.MboxSize;
+                NormalMboxStatus.Text = string.Format("{0} {1}", s, s != 1 ? "messages" : "message");
+            }
         }
 
         private void SPEStatusChanged(SPEEmulator.SPEProcessor spe)

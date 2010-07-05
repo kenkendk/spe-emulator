@@ -201,6 +201,8 @@ namespace SPEEmulator
             m_outIntrMbox = new Queue<uint>(m_outIntrMboxSize);
             m_inMbox = new Queue<uint>(m_inMboxSize);
 
+            m_event = new System.Threading.ManualResetEvent(false);
+
             m_spu = new SPU(this);
             m_mfc = new MFC();
         }
@@ -354,26 +356,7 @@ namespace SPEEmulator
         /// <returns>True if the message was put, false otherwise</returns>
         public bool WriteMbox(uint value, bool block = true)
         {
-            while (true)
-            {
-                lock (m_lock)
-                {
-                    if (m_inMbox.Count >= m_inMboxSize)
-                    {
-                        if (!block)
-                            return false;
-                    }
-                    else
-                    {
-                        m_inMbox.Enqueue(value);
-                        return true;
-                    }
-                }
-
-                m_event.WaitOne(1000);
-            }
-
-            throw new InvalidProgramException("Not supposed to get here");
+            return WriteMbox(m_inMbox, m_inMboxSize, value, block);
         }
 
         /// <summary>
@@ -530,9 +513,91 @@ namespace SPEEmulator
 
             throw new InvalidProgramException("Not supposed to get here");
         }
+
+        /// <summary>
+        /// Writes a message to the mailbox
+        /// </summary>
+        /// <param name="mbox">The mailbox to write to</param>
+        /// <param name="maxcount">The max size of the mailbox</param>
+        /// <param name="value">The value to write</param>
+        /// <param name="block">True if the call should block until the message can be written, false otherwise</param>
+        /// <returns>True if the message was put, false otherwise</returns>
+        public bool WriteMbox(Queue<uint> mbox, int maxcount, uint value, bool block = true)
+        {
+            while (true)
+            {
+                lock (m_lock)
+                {
+                    if (mbox.Count >= maxcount)
+                    {
+                        if (!block)
+                            return false;
+                    }
+                    else
+                    {
+                        mbox.Enqueue(value);
+                        return true;
+                    }
+                }
+
+                m_event.WaitOne(1000);
+            }
+
+            throw new InvalidProgramException("Not supposed to get here");
+        }
         #endregion
 
         #region Internal methods
+
+        internal uint SPU_InMboxSize
+        {
+            get
+            {
+                lock (m_lock)
+                    return (uint)m_inMbox.Count;
+            }
+        }
+
+        internal uint SPU_OutMboxSize
+        {
+            get
+            {
+                lock (m_lock)
+                    return (uint)(m_outMboxSize - m_outMbox.Count);
+            }
+        }
+
+        internal uint SPU_OutIntrMboxSize
+        {
+            get
+            {
+                lock (m_lock)
+                    return (uint)(m_outIntrMboxSize - m_outIntrMbox.Count);
+            }
+        }
+
+        internal uint SPU_ReadInMbox()
+        {
+            uint x = ReadMbox(m_inMbox, true).Value;
+            if (InMboxRead != null)
+                InMboxRead(this);
+            return x;
+        }
+
+        internal void SPU_WriteOutMbox(uint value)
+        {
+            WriteMbox(m_outMbox, m_outMboxSize, value, true);
+            if (MboxWritten != null)
+                MboxWritten(this);
+        }
+
+        internal void SPU_WriteOutIntrMbox(uint value)
+        {
+            WriteMbox(m_outIntrMbox, m_outIntrMboxSize, value, true);
+            if (IntrMboxWritten != null)
+                IntrMboxWritten(this);
+        }
+
         internal void RaiseInstructionExecuting(string message)
         {
             if (InstructionExecuting != null)

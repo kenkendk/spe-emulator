@@ -182,11 +182,18 @@ namespace SPEEmulator
         }
 
         public RegisterValue()
+            : this(0)
+        {
+        }
+
+        public RegisterValue(RegisterValue r)
+            : this(r.high, r.low)
         {
         }
 
         public RegisterValue(ulong value)
         {
+            this.high = 0;
             this.low = value;
         }
 
