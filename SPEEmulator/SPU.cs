@@ -491,7 +491,7 @@ namespace SPEEmulator
         private RegisterValue ALUSingle(RegisterValue a, RegisterValue b, RegisterValue c, Func<float, float, float, float> exec)
         {
             const int OP_SIZE = 4;
-            byte[] NULL = new byte[OP_SIZE];
+            byte[] NULL = new byte[16];
             RegisterValue rt = new RegisterValue(0);
 
             byte[] a_b = a == null ? NULL : a.Value;
@@ -525,7 +525,7 @@ namespace SPEEmulator
         private RegisterValue ALUDouble(RegisterValue a, RegisterValue b, RegisterValue c, Func<double, double, double, double> exec)
         {
             const int OP_SIZE = 8;
-            byte[] NULL = new byte[OP_SIZE];
+            byte[] NULL = new byte[16];
             RegisterValue rt = new RegisterValue(0);
 
             byte[] a_b = a == null ? NULL : a.Value;
@@ -1929,11 +1929,33 @@ namespace SPEEmulator
         private void Execute(OpCodes.frds i)
         {
         }
-
+        */ 
+        
         private void Execute(OpCodes.fesd i)
         {
+            const int OP_SIZE = 4;
+            RegisterValue rt = new RegisterValue(0);
+
+            byte[] a_b = m_registers[i.RA].Value.Value;
+
+            for (int j = 0; j < 16; j += OP_SIZE * 2)
+            {
+                if (BitConverter.IsLittleEndian)
+                    Array.Reverse(a_b, j, OP_SIZE);
+
+                double aF = BitConverter.ToSingle(a_b, j);
+
+                byte[] tmp = BitConverter.GetBytes(aF);                
+                if (BitConverter.IsLittleEndian)
+                    Array.Reverse(tmp);
+
+                //TODO: Deal with overflow
+                Array.Copy(tmp, 0, rt.Value, j, tmp.Length);
+            }
+
+            m_registers[i.RT].Value = rt;
         }
-        */
+
         private void Execute(OpCodes.dfceq i)
         {
             ulong[] slots = new ulong[2];

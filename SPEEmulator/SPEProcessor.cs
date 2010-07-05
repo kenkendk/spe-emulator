@@ -228,7 +228,7 @@ namespace SPEEmulator
         /// <summary>
         /// Starts the SPE, executing the datastream presented
         /// </summary>
-        public void Start()
+        public void Start(bool singleStepping)
         {
             lock (m_lock)
             {
@@ -241,10 +241,20 @@ namespace SPEEmulator
             if (SPEStarted != null)
                 SPEStarted(this);
 
-            m_spu.SingleStep = false;
+            m_spu.SingleStep = singleStepping;
             m_spu.Run();
             //m_mfc.Start();
 
+            if (singleStepping)
+                Pause();
+        }
+
+        /// <summary>
+        /// Starts the SPE, executing the datastream presented
+        /// </summary>
+        public void Start()
+        {
+            Start(false);
         }
 
         /// <summary>
@@ -325,7 +335,7 @@ namespace SPEEmulator
         {
             lock (m_lock)
             {
-                if (m_state == SPEState.NotStarted || m_state == SPEState.Terminated)
+                if (m_state == SPEState.Terminated)
                     throw new InvalidOperationException(string.Format("Cannot resume the SPE while state is {0}", m_state));
 
                 if (m_state == SPEState.Running)
@@ -470,17 +480,23 @@ namespace SPEEmulator
         /// <returns>The double read</returns>
         public double ReadLSDouble(uint offset)
         {
-            return BitConverter.ToDouble(m_ls, (int)offset);
+            byte[] data = new byte[8];
+            Array.Copy(m_ls, (int)offset, data, 0, 8);
+            Array.Reverse(data);
+            return BitConverter.ToDouble(data, 0);
         }
 
         /// <summary>
-        /// Reads a double value from LS
+        /// Reads a single value from LS
         /// </summary>
         /// <param name="offset">The offset to start reading from</param>
         /// <returns>The double read</returns>
         public double ReadLSFloat(uint offset)
         {
-            return BitConverter.ToSingle(m_ls, (int)offset);
+            byte[] data = new byte[4];
+            Array.Copy(m_ls, (int)offset, data, 0, 4);
+            Array.Reverse(data);
+            return BitConverter.ToSingle(data, 0);
         }
         #endregion
 
