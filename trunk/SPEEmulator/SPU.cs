@@ -491,12 +491,20 @@ namespace SPEEmulator
         private RegisterValue ALUSingle(RegisterValue a, RegisterValue b, RegisterValue c, Func<float, float, float, float> exec)
         {
             const int OP_SIZE = 4;
-            byte[] NULL = new byte[16];
             RegisterValue rt = new RegisterValue(0);
 
-            byte[] a_b = a == null ? NULL : a.Value;
-            byte[] b_b = b == null ? NULL : b.Value;
-            byte[] c_b = c == null ? NULL : c.Value;
+            byte[] a_b = new byte[16];
+            byte[] b_b = new byte[16];
+            byte[] c_b = new byte[16];
+
+            if (a != null)
+                Array.Copy(a.Value, a_b, 16);
+
+            if (b != null)
+                Array.Copy(b.Value, b_b, 16);
+
+            if (c != null)
+                Array.Copy(c.Value, c_b, 16);
 
             for (int j = 0; j < 16; j += OP_SIZE)
             {
@@ -525,12 +533,20 @@ namespace SPEEmulator
         private RegisterValue ALUDouble(RegisterValue a, RegisterValue b, RegisterValue c, Func<double, double, double, double> exec)
         {
             const int OP_SIZE = 8;
-            byte[] NULL = new byte[16];
             RegisterValue rt = new RegisterValue(0);
 
-            byte[] a_b = a == null ? NULL : a.Value;
-            byte[] b_b = b == null ? NULL : b.Value;
-            byte[] c_b = c == null ? NULL : c.Value;
+            byte[] a_b = new byte[16];
+            byte[] b_b = new byte[16];
+            byte[] c_b = new byte[16];
+
+            if (a != null)
+                Array.Copy(a.Value, a_b, 16);
+
+            if (b != null)
+                Array.Copy(b.Value, b_b, 16);
+
+            if (c != null)
+                Array.Copy(c.Value, c_b, 16);
 
             for (int j = 0; j < 16; j += OP_SIZE)
             {
@@ -1897,19 +1913,103 @@ namespace SPEEmulator
             m_registers[i.RT].Value = ALUDouble(m_registers[i.RA].Value, m_registers[i.RB].Value, m_registers[i.RT].Value, (a, b, c) => -(c + (a * b)));
         }
 
-        /*
+        private uint getSign(uint value)
+        {
+            return value >> 31 & 0x1;
+        }
+
+        private uint getBiased(uint value)
+        {
+            return value >> 23 & 0xffu;
+        }
+
+        private uint getBase(uint value)
+        {
+            return value >> 10 & 0x1fffu;
+        }
+
+        private uint getStep(uint value)
+        {
+            return value & 0x3ff;
+        }
+
+        private uint setSign(uint value, uint sign)
+        {
+            return value ^ (sign & 0x80000000u);
+        }
+
+        private uint setBiased(uint value, uint biased)
+        {
+            return value ^ (biased & 0x7f800000u);
+        }
+
+        private uint setBase(uint value, uint base_)
+        {
+            return value ^ (base_ & 0x7ffc00);
+        }
+
+        private uint setStep(uint value, uint step)
+        {
+            return value ^ (step & 0x3ff);
+        }
+
         private void Execute(OpCodes.frest i)
         {
+            m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, null, null, (a, b, c) => (float)1.0 / a);
+            
+            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.frsqest i)
         {
-        }
+            m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, null, null, (a, b, c) => (float)1.0 / (float)(Math.Sqrt(Math.Abs(a))));
 
+            throw new Exception("Not reviewed");
+        }
+       
         private void Execute(OpCodes.fi i)
         {
-        }
+            // WARNING!!    WARNING!!   WARNING!!   WARNING!!   WARNING!!
+            //
+            // It is possible that this instruction is not needed, because our emulator calculates the correct 
+            // values in "frest" and "frsqest" (see above).
+            //
+            //
 
+            byte[] data = new byte[4];
+            Array.Copy(m_registers[i.RB].Value.Value, data, 4);
+            Array.Reverse(data);
+            uint number = BitConverter.ToUInt32(data, 0);
+            
+            double sign = getSign(number);
+            double biasedExponent = (double)getBiased(number);
+            
+            double baseFraction = 1;
+            double.TryParse("1," + getBase(number).ToString(), out baseFraction);
+
+            double stepFraction = 0;
+            double.TryParse("0,000" + getStep(number).ToString(), out stepFraction);
+            
+            //  Y ← 0.RA13:31.
+            double y = 0;
+            double.TryParse("0," + (m_registers[i.RA].Word & 0x7ffff).ToString(), out y);
+
+            //  RT ← (-1)S * (1.BaseFraction - 0.000StepFraction * Y) * 2(BiasedExponent -127)
+            float rt = (float)(Math.Pow(-1.0, sign) * (baseFraction - stepFraction * y) * Math.Pow(2.0, (biasedExponent - 127.0)));
+            
+            byte[] tmp = BitConverter.GetBytes(rt);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(tmp);
+
+            //TODO: Deal with overflow
+            Array.Copy(m_registers[i.RB].Value.Value, 0, m_registers[i.RT].Value.Value, 0, 4);
+            Array.Copy(m_registers[i.RB].Value.Value, 0, m_registers[i.RT].Value.Value, 4, 4);
+            Array.Copy(m_registers[i.RB].Value.Value, 0, m_registers[i.RT].Value.Value, 8, 4);
+            Array.Copy(m_registers[i.RB].Value.Value, 0, m_registers[i.RT].Value.Value, 12, 4);
+
+            throw new Exception("Not reviewed");
+        }
+        /* 
         private void Execute(OpCodes.csflt i)
         {
         }

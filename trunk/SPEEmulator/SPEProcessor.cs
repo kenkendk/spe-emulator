@@ -465,7 +465,10 @@ namespace SPEEmulator
         {
             byte[] data = new byte[8];
             Array.Copy(m_ls, (int)offset, data, 0, 8);
-            Array.Reverse(data);
+            
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(data);
+
             return BitConverter.ToDouble(data, 0);
         }
 
@@ -478,7 +481,10 @@ namespace SPEEmulator
         {
             byte[] data = new byte[4];
             Array.Copy(m_ls, (int)offset, data, 0, 4);
-            Array.Reverse(data);
+            
+            if(BitConverter.IsLittleEndian)
+                Array.Reverse(data);
+            
             return BitConverter.ToSingle(data, 0);
         }
         #endregion
