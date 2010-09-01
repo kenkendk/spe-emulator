@@ -9,7 +9,7 @@ namespace SPEEmulator.OpCodes.Bases
     /// RI10 based layout is for 7 bit litterals with with a single source and target register, 
     /// using an 11 bit opcode
     /// </summary>
-    class RI7 : R
+    public class RI7 : R
     {
         /// <summary>
         /// Constructs an RI7 base

@@ -10,7 +10,7 @@ namespace SPEEmulator.OpCodes.Bases
     /// using a 10 bit opcode.
     /// This instruction class is not named in the documentation.
     /// </summary>
-    class RI8 : R
+    public class RI8 : R
     {
         /// <summary>
         /// Constructs an RI8 base

@@ -9,7 +9,7 @@ namespace SPEEmulator.OpCodes.Bases
     /// RI16 based layout is for 18 bit litterals with with a target register, 
     /// using an 7 bit opcode
     /// </summary>
-    class RI18 : R0
+    public class RI18 : R0
     {
         /// <summary>
         /// Constructs an RI18 base

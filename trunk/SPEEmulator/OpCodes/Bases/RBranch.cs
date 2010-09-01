@@ -10,7 +10,7 @@ namespace SPEEmulator.OpCodes.Bases
     /// using 11 bits for the opcode, some bits are used for relative offset.
     /// This branch class is not named in the documentation.
     /// </summary>
-    class RBranch : Instruction
+    public class RBranch : Instruction
     {
         /// <summary>
         /// Constructs an RBranch base
