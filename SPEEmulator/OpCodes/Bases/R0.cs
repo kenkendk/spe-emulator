@@ -10,7 +10,7 @@ namespace SPEEmulator.OpCodes.Bases
     /// using 11 bits for the opcode, fourteen bits are unused.
     /// This instruction class is not named in the documentation.
     /// </summary>
-    class R0 : Instruction
+    public class R0 : Instruction
     {
         /// <summary>
         /// Constructs an R base

@@ -9,7 +9,7 @@ namespace SPEEmulator.OpCodes.Bases
     /// RR based layout is for instructions with two source registers and one target register,
     /// using 11 bits for the opcode
     /// </summary>
-    class RR : R
+    public class RR : R
     {
         /// <summary>
         /// Constructs an RR base

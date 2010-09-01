@@ -10,7 +10,7 @@ namespace SPEEmulator.OpCodes.Bases
     /// using 11 bits for the opcode, some bits are used to toggle interrupts.
     /// This instruction class is not named in the documentation.
     /// </summary>
-    class RInt : R
+    public class RInt : R
     {
         /// <summary>
         /// Constructs an RInt base

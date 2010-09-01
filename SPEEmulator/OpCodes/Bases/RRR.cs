@@ -9,7 +9,7 @@ namespace SPEEmulator.OpCodes.Bases
     /// RRR based layout is for instructions with three source registers and one target register,
     /// using 4 bits for the opcode
     /// </summary>
-    class RRR : Instruction
+    public class RRR : Instruction
     {
         /// <summary>
         /// Constructs an RRR base
