@@ -319,20 +319,23 @@ namespace SPEEmulatorTestApp
 
         void m_spe_InstructionExecuted(SPEEmulator.SPEProcessor sender, string message)
         {
-            if (this.InvokeRequired)
+            if (checkBoxRegisters.Checked)
             {
-                this.Invoke(new SPEEmulator.InformationEventDelegate(m_spe_InstructionExecuted), sender, message);
-            }
-            else
-            {
-                if (m_formRegister.IsDisposed)
+                if (this.InvokeRequired)
                 {
-                    m_formRegister = new Registers();
-                    m_formRegister.LoadSPE(m_spe);
+                    this.Invoke(new SPEEmulator.InformationEventDelegate(m_spe_InstructionExecuted), sender, message);
                 }
+                else
+                {
+                    if (m_formRegister.IsDisposed)
+                    {
+                        m_formRegister = new Registers();
+                        m_formRegister.LoadSPE(m_spe);
+                    }
 
-                m_formRegister.Reload();
-                m_formRegister.Show();
+                    m_formRegister.Reload();
+                    m_formRegister.Show();
+                }
             }
         }
 
@@ -350,6 +353,13 @@ namespace SPEEmulatorTestApp
             Memory mem = new Memory();
             mem.LoadSPE(m_spe);
             mem.Show();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            m_formRegister = new Registers();
+            m_formRegister.LoadSPE(m_spe);
+            m_formRegister.Show();
         }
     }
 }
