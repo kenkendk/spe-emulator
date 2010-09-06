@@ -8,7 +8,7 @@ namespace SPEEmulator
     /// <summary>
     /// Represents a single SPU register, 128 bits wide
     /// </summary>
-    class Register
+    public class Register
     {
         private RegisterValue m_value = new RegisterValue();
 
@@ -97,7 +97,7 @@ namespace SPEEmulator
     /// Represents an SPU register value,
     /// emulated by using 16 byte values
     /// </summary>
-    class RegisterValue
+    public class RegisterValue
     {
         private byte[] m_value = new byte[16];
 

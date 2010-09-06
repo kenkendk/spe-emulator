@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SPEEmulator.OpCodes
 {
-    class OpCodeParser
+    public class OpCodeParser
     {
         private class Node
         {

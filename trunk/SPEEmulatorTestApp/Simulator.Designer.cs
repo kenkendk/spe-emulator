@@ -52,6 +52,7 @@
             this.OutMboxValue = new System.Windows.Forms.NumericUpDown();
             this.SimulationControls = new System.Windows.Forms.Panel();
             this.SimulationInteractionControls = new System.Windows.Forms.Panel();
+            this.button1 = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.PrintCodeExecution = new System.Windows.Forms.CheckBox();
             this.CILBrowsePanel = new System.Windows.Forms.Panel();
@@ -76,14 +77,14 @@
             this.ELFFilename.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ELFFilename.Location = new System.Drawing.Point(0, 0);
             this.ELFFilename.Name = "ELFFilename";
-            this.ELFFilename.Size = new System.Drawing.Size(208, 20);
+            this.ELFFilename.Size = new System.Drawing.Size(348, 20);
             this.ELFFilename.TabIndex = 0;
             this.ELFFilename.Text = "..\\..\\..\\test-apps\\fac-asm";
             // 
             // BrowseELFFile
             // 
             this.BrowseELFFile.Dock = System.Windows.Forms.DockStyle.Right;
-            this.BrowseELFFile.Location = new System.Drawing.Point(285, 0);
+            this.BrowseELFFile.Location = new System.Drawing.Point(425, 0);
             this.BrowseELFFile.Name = "BrowseELFFile";
             this.BrowseELFFile.Size = new System.Drawing.Size(24, 20);
             this.BrowseELFFile.TabIndex = 2;
@@ -118,7 +119,7 @@
             // BrowseCILFile
             // 
             this.BrowseCILFile.Dock = System.Windows.Forms.DockStyle.Right;
-            this.BrowseCILFile.Location = new System.Drawing.Point(285, 0);
+            this.BrowseCILFile.Location = new System.Drawing.Point(425, 0);
             this.BrowseCILFile.Name = "BrowseCILFile";
             this.BrowseCILFile.Size = new System.Drawing.Size(24, 20);
             this.BrowseCILFile.TabIndex = 1;
@@ -131,13 +132,13 @@
             this.CILFilename.Dock = System.Windows.Forms.DockStyle.Fill;
             this.CILFilename.Location = new System.Drawing.Point(0, 0);
             this.CILFilename.Name = "CILFilename";
-            this.CILFilename.Size = new System.Drawing.Size(285, 20);
+            this.CILFilename.Size = new System.Drawing.Size(425, 20);
             this.CILFilename.TabIndex = 0;
             // 
             // StartButton
             // 
             this.StartButton.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.StartButton.Location = new System.Drawing.Point(126, 8);
+            this.StartButton.Location = new System.Drawing.Point(196, 8);
             this.StartButton.Name = "StartButton";
             this.StartButton.Size = new System.Drawing.Size(75, 23);
             this.StartButton.TabIndex = 0;
@@ -149,7 +150,7 @@
             // 
             this.PauseButton.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.PauseButton.Enabled = false;
-            this.PauseButton.Location = new System.Drawing.Point(214, 8);
+            this.PauseButton.Location = new System.Drawing.Point(284, 8);
             this.PauseButton.Name = "PauseButton";
             this.PauseButton.Size = new System.Drawing.Size(75, 23);
             this.PauseButton.TabIndex = 1;
@@ -175,7 +176,7 @@
             this.OutputText.Name = "OutputText";
             this.OutputText.ReadOnly = true;
             this.OutputText.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.OutputText.Size = new System.Drawing.Size(419, 203);
+            this.OutputText.Size = new System.Drawing.Size(559, 239);
             this.OutputText.TabIndex = 1;
             // 
             // ReadNormalMboxButton
@@ -311,7 +312,7 @@
             this.SimulationControls.Dock = System.Windows.Forms.DockStyle.Fill;
             this.SimulationControls.Location = new System.Drawing.Point(0, 48);
             this.SimulationControls.Name = "SimulationControls";
-            this.SimulationControls.Size = new System.Drawing.Size(419, 335);
+            this.SimulationControls.Size = new System.Drawing.Size(559, 371);
             this.SimulationControls.TabIndex = 1;
             // 
             // SimulationInteractionControls
@@ -331,10 +332,20 @@
             this.SimulationInteractionControls.Controls.Add(this.ReadNormalMboxButton);
             this.SimulationInteractionControls.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.SimulationInteractionControls.Enabled = false;
-            this.SimulationInteractionControls.Location = new System.Drawing.Point(0, 216);
+            this.SimulationInteractionControls.Location = new System.Drawing.Point(0, 252);
             this.SimulationInteractionControls.Name = "SimulationInteractionControls";
-            this.SimulationInteractionControls.Size = new System.Drawing.Size(419, 119);
+            this.SimulationInteractionControls.Size = new System.Drawing.Size(559, 119);
             this.SimulationInteractionControls.TabIndex = 2;
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(96, 9);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 14;
+            this.button1.Text = "Memory";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // label3
             // 
@@ -351,7 +362,7 @@
             this.PrintCodeExecution.AutoSize = true;
             this.PrintCodeExecution.Checked = true;
             this.PrintCodeExecution.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.PrintCodeExecution.Location = new System.Drawing.Point(296, 8);
+            this.PrintCodeExecution.Location = new System.Drawing.Point(436, 8);
             this.PrintCodeExecution.Name = "PrintCodeExecution";
             this.PrintCodeExecution.Size = new System.Drawing.Size(123, 17);
             this.PrintCodeExecution.TabIndex = 12;
@@ -367,7 +378,7 @@
             this.CILBrowsePanel.Enabled = false;
             this.CILBrowsePanel.Location = new System.Drawing.Point(96, 24);
             this.CILBrowsePanel.Name = "CILBrowsePanel";
-            this.CILBrowsePanel.Size = new System.Drawing.Size(309, 20);
+            this.CILBrowsePanel.Size = new System.Drawing.Size(449, 20);
             this.CILBrowsePanel.TabIndex = 27;
             // 
             // ELFBrowsePanel
@@ -379,13 +390,13 @@
             this.ELFBrowsePanel.Controls.Add(this.BrowseELFFile);
             this.ELFBrowsePanel.Location = new System.Drawing.Point(96, 0);
             this.ELFBrowsePanel.Name = "ELFBrowsePanel";
-            this.ELFBrowsePanel.Size = new System.Drawing.Size(309, 20);
+            this.ELFBrowsePanel.Size = new System.Drawing.Size(449, 20);
             this.ELFBrowsePanel.TabIndex = 28;
             // 
             // DisassembleElf
             // 
             this.DisassembleElf.Dock = System.Windows.Forms.DockStyle.Right;
-            this.DisassembleElf.Location = new System.Drawing.Point(208, 0);
+            this.DisassembleElf.Location = new System.Drawing.Point(348, 0);
             this.DisassembleElf.Name = "DisassembleElf";
             this.DisassembleElf.Size = new System.Drawing.Size(77, 20);
             this.DisassembleElf.TabIndex = 1;
@@ -402,19 +413,20 @@
             this.FilenamePanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.FilenamePanel.Location = new System.Drawing.Point(0, 0);
             this.FilenamePanel.Name = "FilenamePanel";
-            this.FilenamePanel.Size = new System.Drawing.Size(419, 48);
+            this.FilenamePanel.Size = new System.Drawing.Size(559, 48);
             this.FilenamePanel.TabIndex = 0;
             // 
             // SimulationButtonPanel
             // 
+            this.SimulationButtonPanel.Controls.Add(this.button1);
             this.SimulationButtonPanel.Controls.Add(this.StepButton);
             this.SimulationButtonPanel.Controls.Add(this.PauseButton);
             this.SimulationButtonPanel.Controls.Add(this.PrintCodeExecution);
             this.SimulationButtonPanel.Controls.Add(this.StartButton);
             this.SimulationButtonPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.SimulationButtonPanel.Location = new System.Drawing.Point(0, 383);
+            this.SimulationButtonPanel.Location = new System.Drawing.Point(0, 419);
             this.SimulationButtonPanel.Name = "SimulationButtonPanel";
-            this.SimulationButtonPanel.Size = new System.Drawing.Size(419, 35);
+            this.SimulationButtonPanel.Size = new System.Drawing.Size(559, 35);
             this.SimulationButtonPanel.TabIndex = 2;
             // 
             // StepButton
@@ -441,7 +453,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(419, 418);
+            this.ClientSize = new System.Drawing.Size(559, 454);
             this.Controls.Add(this.SimulationControls);
             this.Controls.Add(this.SimulationButtonPanel);
             this.Controls.Add(this.FilenamePanel);
@@ -501,6 +513,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox PrintCodeExecution;
         private System.Windows.Forms.Button StepButton;
+        private System.Windows.Forms.Button button1;
     }
 }
 

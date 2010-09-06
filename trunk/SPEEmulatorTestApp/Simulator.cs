@@ -11,10 +11,12 @@ namespace SPEEmulatorTestApp
     public partial class Simulator : Form
     {
         private SPEEmulator.SPEProcessor m_spe = null;
+        private Registers m_formRegister;
 
         public Simulator()
         {
             InitializeComponent();
+            m_formRegister = new Registers();
         }
 
         private void LoadELF_CheckedChanged(object sender, EventArgs e)
@@ -275,11 +277,13 @@ namespace SPEEmulatorTestApp
                 OutputText.Text = "";
 
                 m_spe = new SPEEmulator.SPEProcessor();
+                m_formRegister.LoadSPE(m_spe);
 
                 m_spe.SPEStarted += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
                 m_spe.SPEStopped += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
                 m_spe.SPEPaused += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
                 m_spe.SPEResumed += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
+                m_spe.InstructionExecuted += new SPEEmulator.InformationEventDelegate(m_spe_InstructionExecuted);
 
                 m_spe.InstructionExecuting += new SPEEmulator.InformationEventDelegate(SPE_InstructionExecuting);
                 m_spe.MissingMethodError += new SPEEmulator.InformationEventDelegate(SPE_MissingMethodError);
@@ -293,6 +297,7 @@ namespace SPEEmulatorTestApp
                 m_spe.MboxWritten += new SPEEmulator.StatusEventDelegate(SPEMboxWritten);
                 m_spe.IntrMboxWritten += new SPEEmulator.StatusEventDelegate(SPEIntrMboxWritten);
                 m_spe.InMboxRead += new SPEEmulator.StatusEventDelegate(SPEInMboxRead);
+
 
                 try
                 {
@@ -312,6 +317,25 @@ namespace SPEEmulatorTestApp
             }
         }
 
+        void m_spe_InstructionExecuted(SPEEmulator.SPEProcessor sender, string message)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new SPEEmulator.InformationEventDelegate(m_spe_InstructionExecuted), sender, message);
+            }
+            else
+            {
+                if (m_formRegister.IsDisposed)
+                {
+                    m_formRegister = new Registers();
+                    m_formRegister.LoadSPE(m_spe);
+                }
+
+                m_formRegister.Reload();
+                m_formRegister.Show();
+            }
+        }
+
 
         private void StepButton_Click(object sender, EventArgs e)
         {
@@ -319,6 +343,13 @@ namespace SPEEmulatorTestApp
                 Start(true);
             else
                 m_spe.Step();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Memory mem = new Memory();
+            mem.LoadSPE(m_spe);
+            mem.Show();
         }
     }
 }

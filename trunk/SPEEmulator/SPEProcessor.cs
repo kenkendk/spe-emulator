@@ -156,6 +156,10 @@ namespace SPEEmulator
         /// </summary>
         public event InformationEventDelegate InstructionExecuting;
         /// <summary>
+        /// Signals that a instruction was executed
+        /// </summary>
+        public event InformationEventDelegate InstructionExecuted;
+        /// <summary>
         /// Signals that an instruction was found but could not be executed due to a missing implementation
         /// </summary>
         public event InformationEventDelegate MissingMethodError;
@@ -608,6 +612,12 @@ namespace SPEEmulator
         {
             if (InstructionExecuting != null)
                 InstructionExecuting(this, message);
+        }
+
+        internal void RaiseInstructionExecuted()
+        {
+            if (InstructionExecuted != null)
+                InstructionExecuted(this, "");
         }
 
         internal void RaiseMissingMethodError(string message)
