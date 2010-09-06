@@ -130,6 +130,11 @@ namespace SPEEmulator
             set { m_singleStep = value; }
         }
 
+        public Register[] Register
+        {
+            get { return m_registers; }
+        }
+
         /// <summary>
         /// Gets or sets a list of instruction adresses where the simulator will pause
         /// </summary>
@@ -219,6 +224,8 @@ namespace SPEEmulator
                         m_spe.RaiseMissingMethodError(string.Format("{0} is not implemented: {1}", op.Mnemonic, ex.ToString()));
                         break;
                     }
+
+                    m_spe.RaiseInstructionExecuted();
                 }
                 catch (Exception ex)
                 {
@@ -1956,15 +1963,11 @@ namespace SPEEmulator
         private void Execute(OpCodes.frest i)
         {
             m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, null, null, (a, b, c) => (float)1.0 / a);
-            
-            throw new Exception("Not reviewed");
         }
 
         private void Execute(OpCodes.frsqest i)
         {
             m_registers[i.RT].Value = ALUSingle(m_registers[i.RA].Value, null, null, (a, b, c) => (float)1.0 / (float)(Math.Sqrt(Math.Abs(a))));
-
-            throw new Exception("Not reviewed");
         }
        
         private void Execute(OpCodes.fi i)
@@ -2006,8 +2009,6 @@ namespace SPEEmulator
             Array.Copy(m_registers[i.RB].Value.Value, 0, m_registers[i.RT].Value.Value, 4, 4);
             Array.Copy(m_registers[i.RB].Value.Value, 0, m_registers[i.RT].Value.Value, 8, 4);
             Array.Copy(m_registers[i.RB].Value.Value, 0, m_registers[i.RT].Value.Value, 12, 4);
-
-            throw new Exception("Not reviewed");
         }
         /* 
         private void Execute(OpCodes.csflt i)
