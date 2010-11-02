@@ -6,7 +6,7 @@ using System.Text;
 namespace SPEEmulator.OpCodes.Bases
 {
     /// <summary>
-    /// R0 based layout is for instructions with oone target register,
+    /// R0 based layout is for instructions with one target register,
     /// using 11 bits for the opcode, fourteen bits are unused.
     /// This instruction class is not named in the documentation.
     /// </summary>
