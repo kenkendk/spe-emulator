@@ -107,6 +107,26 @@ namespace SPEEmulator
             hiproc = 15
         }
 
+        private static byte[] WriteStruct<T>(T item)
+        {
+            IntPtr data = IntPtr.Zero;
+            try
+            {
+                int size = Marshal.SizeOf(typeof(T));
+                byte[] result = new byte[size];
+                data = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(T)));
+                Marshal.StructureToPtr(item, data, false);
+                Marshal.Copy(data, result, 0, size);
+                return result;
+            }
+            finally
+            {
+                if (data != IntPtr.Zero)
+                    Marshal.FreeHGlobal(data);
+            }
+
+        }
+
         private static T ReadStruct<T>(Stream s)
         {
             GCHandle handle = new GCHandle();
@@ -145,6 +165,65 @@ namespace SPEEmulator
         private SymbolTableEntry[] m_symbols;
         private int m_stringtableindex = -1;
         private int m_symboltableindex = -1;
+
+        /// <summary>
+        /// Writes a bare-metal ELF-SPE header for a code fragment of the given size
+        /// </summary>
+        /// <param name="codesize">The size of the following code block</param>
+        /// <param name="entryOffset">The byte offset at which the start function resides</param>
+        /// <param name="stream">The stream to write the header into</param>
+        public static void EmitELFHeader(uint codesize, uint entryOffset, System.IO.Stream stream)
+        {
+            ELF32Header header = new ELF32Header();
+            header.magic1 = MAGIC_HEADER[0];
+            header.magic2 = MAGIC_HEADER[1];
+            header.magic3 = MAGIC_HEADER[2];
+            header.magic4 = MAGIC_HEADER[3];
+
+            header.@class = 1;
+            header.mversion = 1;
+
+            header.data_enc = 2;
+            header.type = 2;
+            header.dummy = 0;
+            header.ehsize = 52;
+            header.entry = entryOffset;
+            header.padding = 0;
+            header.phnum = 1;
+            header.phentsize = 32;
+            header.phoff = header.ehsize;
+            header.shentsize = 40;
+            header.shnum = 0;
+            header.shoff = header.ehsize;
+            header.shstrndx = 0;
+
+            header.machine = 23;
+            header.version = 1;
+            header.flags = 0;
+
+            ProgramHeader[] progheaders = new ProgramHeader[header.phnum];
+            SectionHeader[] sectionheaders = new SectionHeader[0];
+
+            progheaders[0].align = 128;
+            progheaders[0].filesz = codesize;
+            progheaders[0].memsz = codesize;
+            progheaders[0].offset = (uint)(header.ehsize + header.phentsize);
+            progheaders[0].paddr = 0;
+            progheaders[0].vaddr = 0;
+            progheaders[0].type = 1;
+            progheaders[0].flags = 0x1;
+
+            if (BitConverter.IsLittleEndian)
+            {
+                header = FixEndian(header);
+                progheaders[0] = FixEndian(progheaders[0]);
+            }
+
+            byte[] tmp = WriteStruct(header);
+            stream.Write(tmp, 0, tmp.Length);
+            tmp = WriteStruct(progheaders[0]);
+            stream.Write(tmp, 0, tmp.Length);
+        }
 
         public ELFReader(Stream s)
         {
@@ -234,17 +313,15 @@ namespace SPEEmulator
             return sb.ToString();
         }
 
-        public void Disassemble(Stream output)
+        public void Disassemble(TextWriter sw)
         {
-            System.IO.StreamWriter sw = null;
             try
             {
                 OpCodes.OpCodeParser parser = new OpCodes.OpCodeParser();
 
-                List<SymbolTableEntry> functions = m_symbols.Where(x => x.Type == st_type.func && x.Bind == st_bind.global).ToList();
-                List<SymbolTableEntry> labels = m_symbols.Where(x => x.Type == st_type.notype && x.Bind == st_bind.local).ToList();
+                List<SymbolTableEntry> functions = m_symbols == null ? new List<SymbolTableEntry>() : m_symbols.Where(x => x.Type == st_type.func && x.Bind == st_bind.global).ToList();
+                List<SymbolTableEntry> labels = m_symbols == null ? new List<SymbolTableEntry>() : m_symbols.Where(x => x.Type == st_type.notype && x.Bind == st_bind.local).ToList();
 
-                sw = new StreamWriter(output);
                 for(int i = 0; i < m_progheaders.Length; i++)
                     if (m_progheaders[i].type == 1 && (m_progheaders[i].flags & 0x1) == 1) //Load and execute
                     {
@@ -295,7 +372,7 @@ namespace SPEEmulator
                 }
         }
 
-        private T FixEndian<T>(T item) where T : struct
+        private static T FixEndian<T>(T item) where T : struct
         {
             //Box it
             object hbox = item;

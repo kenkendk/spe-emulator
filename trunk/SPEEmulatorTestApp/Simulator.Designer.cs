@@ -52,19 +52,19 @@
             this.OutMboxValue = new System.Windows.Forms.NumericUpDown();
             this.SimulationControls = new System.Windows.Forms.Panel();
             this.SimulationInteractionControls = new System.Windows.Forms.Panel();
-            this.button1 = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
+            this.button1 = new System.Windows.Forms.Button();
             this.PrintCodeExecution = new System.Windows.Forms.CheckBox();
             this.CILBrowsePanel = new System.Windows.Forms.Panel();
             this.ELFBrowsePanel = new System.Windows.Forms.Panel();
             this.DisassembleElf = new System.Windows.Forms.Button();
             this.FilenamePanel = new System.Windows.Forms.Panel();
             this.SimulationButtonPanel = new System.Windows.Forms.Panel();
+            this.checkBoxRegisters = new System.Windows.Forms.CheckBox();
+            this.button2 = new System.Windows.Forms.Button();
             this.StepButton = new System.Windows.Forms.Button();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.button2 = new System.Windows.Forms.Button();
-            this.checkBoxRegisters = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.OutMboxValue)).BeginInit();
             this.SimulationControls.SuspendLayout();
             this.SimulationInteractionControls.SuspendLayout();
@@ -339,6 +339,15 @@
             this.SimulationInteractionControls.Size = new System.Drawing.Size(419, 119);
             this.SimulationInteractionControls.TabIndex = 2;
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(344, 8);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(62, 13);
+            this.label3.TabIndex = 13;
+            this.label3.Text = "PC: 0x0000";
+            // 
             // button1
             // 
             this.button1.Location = new System.Drawing.Point(11, 35);
@@ -348,15 +357,6 @@
             this.button1.Text = "Memory";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(344, 8);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(62, 13);
-            this.label3.TabIndex = 13;
-            this.label3.Text = "PC: 0x0000";
             // 
             // PrintCodeExecution
             // 
@@ -433,6 +433,29 @@
             this.SimulationButtonPanel.Size = new System.Drawing.Size(419, 66);
             this.SimulationButtonPanel.TabIndex = 2;
             // 
+            // checkBoxRegisters
+            // 
+            this.checkBoxRegisters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.checkBoxRegisters.AutoSize = true;
+            this.checkBoxRegisters.Checked = true;
+            this.checkBoxRegisters.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxRegisters.Location = new System.Drawing.Point(91, 10);
+            this.checkBoxRegisters.Name = "checkBoxRegisters";
+            this.checkBoxRegisters.Size = new System.Drawing.Size(95, 17);
+            this.checkBoxRegisters.TabIndex = 16;
+            this.checkBoxRegisters.Text = "Show registers";
+            this.checkBoxRegisters.UseVisualStyleBackColor = true;
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(10, 6);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.TabIndex = 15;
+            this.button2.Text = "Register";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
             // StepButton
             // 
             this.StepButton.Anchor = System.Windows.Forms.AnchorStyles.Top;
@@ -453,29 +476,6 @@
             this.saveFileDialog.DefaultExt = "s";
             this.saveFileDialog.Filter = "Assembly files (*.s, *.asm)|*.s;*.asm|All files (*.*)|*.*";
             this.saveFileDialog.Title = "Selft file to save disassembly in";
-            // 
-            // button2
-            // 
-            this.button2.Location = new System.Drawing.Point(10, 6);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
-            this.button2.TabIndex = 15;
-            this.button2.Text = "Register";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
-            // 
-            // checkBoxRegisters
-            // 
-            this.checkBoxRegisters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.checkBoxRegisters.AutoSize = true;
-            this.checkBoxRegisters.Checked = true;
-            this.checkBoxRegisters.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxRegisters.Location = new System.Drawing.Point(91, 10);
-            this.checkBoxRegisters.Name = "checkBoxRegisters";
-            this.checkBoxRegisters.Size = new System.Drawing.Size(95, 17);
-            this.checkBoxRegisters.TabIndex = 16;
-            this.checkBoxRegisters.Text = "Show registers";
-            this.checkBoxRegisters.UseVisualStyleBackColor = true;
             // 
             // Simulator
             // 

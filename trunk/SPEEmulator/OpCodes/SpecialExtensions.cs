@@ -77,7 +77,7 @@ namespace SPEEmulator.OpCodes
 
         public override string ToString()
         {
-            return base.ToString() + string.Format("${0}, RO=0x{1:x8}, P={2}", this.RA, this.RO, this.P);
+            return base.ToString() + string.Format(" ${0}, RO=0x{1:x8}, P={2}", this.RA, this.RO, this.P);
         }
     }
 

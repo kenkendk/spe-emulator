@@ -896,7 +896,7 @@ namespace SPEEmulator.OpCodes.Bases
         }
 
         /// <summary>
-        /// Parses a bitstring into an uint, value is assumed to be alligned to MSB, and any missing bits are filled with 0
+        /// Parses a bitstring into an uint, value is assumed to be aligned to MSB, and any missing bits are filled with 0
         /// </summary>
         /// <param name="value">The bitpattern to calculate the value for</param>
         /// <returns>The unsigned integer representing the value</returns>

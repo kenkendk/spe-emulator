@@ -13,10 +13,12 @@ namespace SPEEmulatorTestApp
         private SPEEmulator.SPEProcessor m_spe = null;
         private Registers m_formRegister;
 
-        public Simulator()
+        public Simulator(string[] args)
         {
             InitializeComponent();
             m_formRegister = new Registers();
+            if (args != null && args.Length == 1)
+                ELFFilename.Text = args[0];
         }
 
         private void LoadELF_CheckedChanged(object sender, EventArgs e)
@@ -252,7 +254,7 @@ namespace SPEEmulatorTestApp
                         try
                         {
                             using (System.IO.FileStream fso = System.IO.File.Create(saveFileDialog.FileName))
-                                r.Disassemble(fso);
+                                r.Disassemble(new System.IO.StreamWriter(fso));
                         }
                         catch (Exception ex)
                         {
