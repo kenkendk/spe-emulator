@@ -1272,7 +1272,7 @@ namespace SPEEmulator
 
             RegisterValue tmp = new RegisterValue(0);
 
-            for (int b = 0; b < 15; b++)
+            for (int b = 0; b < 16; b++)
                 if (b + s < 16)
                     tmp.Value[b] = m_registers[i.RA].Value.Value[b + s];
 
@@ -1326,7 +1326,7 @@ namespace SPEEmulator
             {
                 RegisterValue tmp = new RegisterValue(0);
 
-                for (int j = 0; j < 15; j++)
+                for (int j = 0; j < 16; j++)
                     tmp.Value[j] = (byte)(m_registers[i.RA].Value.Value[(j + byteShift) % 16]);
 
                 m_registers[i.RT].Value = tmp;
@@ -1344,7 +1344,7 @@ namespace SPEEmulator
             {
                 RegisterValue tmp = new RegisterValue(0);
 
-                for (int j = 0; j < 15; j++)
+                for (int j = 0; j < 16; j++)
                     tmp.Value[j] = (byte)(m_registers[i.RA].Value.Value[(j + byteShift) % 16]);
 
                 m_registers[i.RT].Value = tmp;
@@ -1363,7 +1363,7 @@ namespace SPEEmulator
             {
                 RegisterValue tmp = new RegisterValue(0);
 
-                for (int j = 0; j < 15; j++)
+                for (int j = 0; j < 16; j++)
                     tmp.Value[j] = (byte)(m_registers[i.RA].Value.Value[(j + byteShift) % 16]);
 
                 m_registers[i.RT].Value = tmp;
