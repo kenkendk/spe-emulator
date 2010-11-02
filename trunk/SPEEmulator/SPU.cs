@@ -937,11 +937,11 @@ namespace SPEEmulator
         private void Execute(OpCodes.fsmb i)
         {
             uint pref = m_registers[i.RA].Word;
-            uint mask = 0x8000;
+            uint mask = 0x1;
 
             m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, null, null, (a, b, c, carry) => {
                 uint res = (pref & mask) == 0 ? 0x00u : 0xffu;
-                mask = mask >> 1;
+                mask = mask << 1;
                 return res;
             });
         }
@@ -949,12 +949,12 @@ namespace SPEEmulator
         private void Execute(OpCodes.fsmh i)
         {
             uint pref = m_registers[i.RA].Word & 0xff;
-            uint mask = 0x80;
+            uint mask = 0x01;
 
             m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
                 uint res = (pref & mask) == 0 ? 0x0000u : 0xffffu;
-                mask = mask >> 1;
+                mask = mask << 1;
                 return res;
             });
         }
@@ -962,12 +962,12 @@ namespace SPEEmulator
         private void Execute(OpCodes.fsm i)
         {
             uint pref = m_registers[i.RA].Word & 0x0f;
-            uint mask = 0x08;
+            uint mask = 0x01;
 
             m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) =>
             {
                 uint res = (pref & mask) == 0 ? 0x00000000u : 0xffffffffu;
-                mask = mask >> 1;
+                mask = mask << 1;
                 return res;
             });
         }
