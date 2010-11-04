@@ -98,7 +98,7 @@ namespace SPEEmulator.OpCodes
 
         public override string ToString()
         {
-            return base.ToString() + string.Format("0x{0:x4}", this.StopAndSignalType);
+            return base.ToString() + string.Format(" 0x{0:x4}", this.StopAndSignalType);
         }
     }
 
