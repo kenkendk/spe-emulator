@@ -11,12 +11,12 @@ namespace SPEEmulatorTestApp
     public partial class Simulator : Form
     {
         private SPEEmulator.SPEProcessor m_spe = null;
-        private Registers m_formRegister;
+        private Registers m_formRegister = null;
+        private List<string> m_outputlines = new List<string>();
 
         public Simulator(string[] args)
         {
             InitializeComponent();
-            m_formRegister = new Registers();
             if (args != null && args.Length == 1)
                 ELFFilename.Text = args[0];
         }
@@ -218,7 +218,11 @@ namespace SPEEmulatorTestApp
                 this.Invoke(new Func<string, object>(WriteOutputText), text);
             else
             {
-                OutputText.Text += text;
+                m_outputlines.Add(text);
+                while (m_outputlines.Count > 100)
+                    m_outputlines.RemoveAt(0);
+                
+                OutputText.Text = string.Join("", m_outputlines.ToArray());
                 OutputText.SelectionStart = OutputText.Text.Length;
                 OutputText.SelectionLength = 0;
                 OutputText.ScrollToCaret();
@@ -276,10 +280,16 @@ namespace SPEEmulatorTestApp
         {
             if (m_spe == null || m_spe.State == SPEEmulator.SPEState.NotStarted || m_spe.State == SPEEmulator.SPEState.Terminated)
             {
+                m_outputlines = new List<string>();
                 OutputText.Text = "";
 
                 m_spe = new SPEEmulator.SPEProcessor();
-                m_formRegister.LoadSPE(m_spe);
+                if (m_formRegister != null)
+                    m_formRegister.Close();
+                m_formRegister = new Registers(m_spe);
+                m_formRegister.Show();
+                m_formRegister.Top = this.Top;
+                m_formRegister.Left = this.Right;
 
                 m_spe.SPEStarted += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
                 m_spe.SPEStopped += new SPEEmulator.StatusEventDelegate(SPEStatusChanged);
@@ -327,20 +337,8 @@ namespace SPEEmulatorTestApp
             }
             else
             {
-                if (checkBoxRegisters.Checked)
-                {
-
-                    if (m_formRegister.IsDisposed)
-                    {
-                        m_formRegister = new Registers();
-                        m_formRegister.LoadSPE(m_spe);
-                    }
-
+                if (m_formRegister != null || !m_formRegister.IsDisposed)
                     m_formRegister.Reload();
-                    m_formRegister.Show();
-                    m_formRegister.Top = this.Top;
-                    m_formRegister.Left = this.Right;
-                }
             }
         }
 
@@ -362,9 +360,13 @@ namespace SPEEmulatorTestApp
 
         private void button2_Click(object sender, EventArgs e)
         {
-            m_formRegister = new Registers();
-            m_formRegister.LoadSPE(m_spe);
-            m_formRegister.Show();
+            if (m_formRegister == null || m_formRegister.IsDisposed)
+            {
+                m_formRegister = new Registers(m_spe);
+                m_formRegister.Show();
+                m_formRegister.Top = this.Top;
+                m_formRegister.Left = this.Right;
+            }
         }
     }
 }
