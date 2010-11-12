@@ -760,46 +760,46 @@ namespace SPEEmulator
         #region Integer and Logical Instructions
         private void Execute(OpCodes.ah i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (uint)(a + b));
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (uint)((a + b) & 0xffff));
         }
 
         private void Execute(OpCodes.ahi i)
         {
             ushort s = (ushort)(RepLeftBit(i, 0) & 0xffff);
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a + s));
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)((a + s) & 0xffff));
         }
 
         private void Execute(OpCodes.a i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (ulong)(a + b));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (ulong)((a + b) & 0xffffffff));
         }
 
         private void Execute(OpCodes.ai i)
         {
             uint t = RepLeftBit(i, 0);
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (ulong)(a + t));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (ulong)((a + t) & 0xffffffff));
         }
 
         private void Execute(OpCodes.sfh i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (uint)(b + ~a + 1));
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (uint)((b + ~a + 1) & 0xffff));
         }
 
         private void Execute(OpCodes.sfhi i)
         {
             ushort t = (ushort)(RepLeftBit(i, 0) & 0xffff);
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(t + ~a + 1));
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)((t + ~a + 1) & 0xffff));
         }
 
         private void Execute(OpCodes.sf i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => b + ~a + 1);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (b + ~a + 1 & 0xffffffff));
         }
 
         private void Execute(OpCodes.sfi i)
         {
             uint t = RepLeftBit(i, 0);
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(t + ~a + 1));
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)((t + ~a + 1) & 0xffffffff));
         }
 
         private void Execute(OpCodes.addx i)
@@ -868,7 +868,7 @@ namespace SPEEmulator
         private void Execute(OpCodes.mpyh i)
         {
             //Sign extend not required because we shift the sign bits out anyway
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => ((a >> 16) * (b & 0xffff)) << 16);
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, m_registers[i.RB].Value, null, (a, b, c, carry) => (((a >> 16) * (b & 0xffff)) & 0xffff) << 16);
         }
 
         private void Execute(OpCodes.mpys i)
@@ -1044,17 +1044,20 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.xsbh i)
         {
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)((a & 0x80) != 0 ? 0xff00 : 0x0000 | (a & 0xff)));
+            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(((a & 0x80) != 0 ? 0xff00 : 0x0000) | (a & 0xff)));
         }
 
         private void Execute(OpCodes.xshw i)
         {
-            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (a & 0x8000) != 0 ? 0xffff0000 : 0x00000000 | (a & 0xffff));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => ((a & 0x8000) != 0 ? 0xffff0000 : 0x00000000) | (a & 0xffff));
         }
+
+        //NOTE: For xswd, the prefered word is at the right side of the qword so it must be shifted into position
+        //For the xshb and xshw instructions, the value is already in place as the prefered slot is the rightmost entry
 
         private void Execute(OpCodes.xswd i)
         {
-            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (a & 0x80000000) != 0 ? 0xffffffff00000000 : 0x0000000000000000 | (a & 0xffffffffu));
+            m_registers[i.RT].Value = ALUDoubleWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => ((a & 0x80000000) != 0 ? 0xffffffff00000000 : 0x0000000000000000) | ((a >> 32) & 0xffffffffu));
         }
     
         private void Execute(OpCodes.and i)

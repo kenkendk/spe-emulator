@@ -21,12 +21,13 @@ namespace SPEEmulatorTestApp
         private TreeNode m_R75 = new TreeNode("Scratch Registers (R75-R79)");
         private TreeNode m_R80 = new TreeNode("Local variable registers (R80-R127)");
 
-        public Registers()
+        public Registers(SPEEmulator.SPEProcessor spe)
         {
             InitializeComponent();
+            LoadSPE(spe);
         }
 
-        public void LoadSPE (SPEEmulator.SPEProcessor spe)
+        private void LoadSPE(SPEEmulator.SPEProcessor spe)
         {
             m_spe = spe;
 
@@ -113,7 +114,7 @@ namespace SPEEmulatorTestApp
                 return;
 
             int count = 0;
-            treeView1.SelectedNode = m_R0;
+            //treeView1.SelectedNode = m_R0;
 
             foreach (SPEEmulator.Register register in m_spe.SPU.Register)
             {
