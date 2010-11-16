@@ -101,6 +101,9 @@ namespace SPEEmulatorTestApp
                     parent.Expand();
                     parent = parent.Parent;
                 }
+                
+                node.Parent.EnsureVisible();
+                node.EnsureVisible();
             }
             else
             {
@@ -113,25 +116,33 @@ namespace SPEEmulatorTestApp
             if (m_spe == null)
                 return;
 
-            int count = 0;
-            //treeView1.SelectedNode = m_R0;
-
-            foreach (SPEEmulator.Register register in m_spe.SPU.Register)
+            try
             {
-                if (count == 0)
-                    Changed(m_R0.Nodes[0].Nodes[0], register.Value.ToString());
-                else if (count == 1)
-                    Changed(m_R1.Nodes[0].Nodes[0], register.Value.ToString());
-                else if (count == 2)
-                    Changed(m_R2.Nodes[0].Nodes[0], register.Value.ToString());
-                else if (count > 79)
-                    Changed(m_R80.Nodes[count - 80].Nodes[0], register.Value.ToString());
-                else if (count > 74)
-                    Changed(m_R75.Nodes[count - 75].Nodes[0], register.Value.ToString());
-                else if (count > 2)
-                    Changed(m_R3.Nodes[count - 3].Nodes[0], register.Value.ToString());
+                treeView1.BeginUpdate();
+                int count = 0;
+                //treeView1.SelectedNode = m_R0;
 
-                count++;
+                foreach (SPEEmulator.Register register in m_spe.SPU.Register)
+                {
+                    if (count == 0)
+                        Changed(m_R0.Nodes[0].Nodes[0], register.Value.ToString());
+                    else if (count == 1)
+                        Changed(m_R1.Nodes[0].Nodes[0], register.Value.ToString());
+                    else if (count == 2)
+                        Changed(m_R2.Nodes[0].Nodes[0], register.Value.ToString());
+                    else if (count > 79)
+                        Changed(m_R80.Nodes[count - 80].Nodes[0], register.Value.ToString());
+                    else if (count > 74)
+                        Changed(m_R75.Nodes[count - 75].Nodes[0], register.Value.ToString());
+                    else if (count > 2)
+                        Changed(m_R3.Nodes[count - 3].Nodes[0], register.Value.ToString());
+
+                    count++;
+                }
+            }
+            finally
+            {
+                treeView1.EndUpdate();
             }
         }
 

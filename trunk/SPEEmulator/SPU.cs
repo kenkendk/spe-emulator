@@ -396,7 +396,7 @@ namespace SPEEmulator
         /// <param name="a">Register operand A</param>
         /// <param name="b">Register operand B</param>
         /// <param name="c">Register operand C</param>
-        /// <param name="exec">The function to execute, is given the paramters a,b,c and carry value</param>
+        /// <param name="exec">The function to execute, is given the parameters a,b,c and carry value</param>
         /// <returns>The calculated value</returns>
         private RegisterValue ALUHalfWord(RegisterValue a, RegisterValue b, RegisterValue c, Func<ushort, ushort, ushort, ushort, uint> exec)
         {
@@ -936,7 +936,7 @@ namespace SPEEmulator
 
         private void Execute(OpCodes.fsmb i)
         {
-            uint pref = m_registers[i.RA].Word;
+            uint pref = m_registers[i.RA].Word & 0xffff;
             uint mask = 0x1;
 
             m_registers[i.RT].Value = ALUByte(m_registers[i.RA].Value, null, null, (a, b, c, carry) => {
