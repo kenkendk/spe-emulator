@@ -59,12 +59,10 @@ namespace SPEEmulatorTestApp
                 return;
             }
 
-            int value = (int)lsAddress.Value;
+            if (lsAddress.Value < 0 || lsAddress.Value > m_spe.LS.Count() || lsAddress.Value % 4 != 0)
+                lsAddress.Value = lsAddress.Value - (lsAddress.Value % 4);
 
-            if (value < 0 || value > m_spe.LS.Count() || value % 4 != 0)
-                lsAddress.Value = value - (value % 4);
-
-            string text = Convert.ToString(m_spe.ReadLSWord((uint)value), 16);
+            string text = Convert.ToString(m_spe.ReadLSWord((uint)lsAddress.Value), 16);
 
             while (text.Length < 8)
                 text = "0" + text;
