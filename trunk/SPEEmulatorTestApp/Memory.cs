@@ -152,5 +152,14 @@ namespace SPEEmulatorTestApp
 
             LoadSPE(m_spe);
         }
+
+        private void editMemBtn_Click(object sender, EventArgs e)
+        {
+            EditMemForm editMem = new EditMemForm();
+            editMem.LoadSPE(m_spe);
+            editMem.ShowDialog();
+
+            LoadSPE(m_spe);
+        }
     }
 }

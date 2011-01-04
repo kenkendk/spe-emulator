@@ -44,6 +44,12 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EditMemory.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EditMemory.Designer.cs">
+      <DependentUpon>EditMemory.cs</DependentUpon>
+    </Compile>
     <Compile Include="Memory.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -64,6 +70,9 @@
     <Compile Include="Simulator.Designer.cs">
       <DependentUpon>Simulator.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="EditMemory.resx">
+      <DependentUpon>EditMemory.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Memory.resx">
       <DependentUpon>Memory.cs</DependentUpon>
     </EmbeddedResource>

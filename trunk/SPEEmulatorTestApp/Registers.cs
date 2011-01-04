@@ -148,6 +148,12 @@ namespace SPEEmulatorTestApp
 
         private void treeView1_AfterLabelEdit(object sender, NodeLabelEditEventArgs e)
         {
+            if (e.Label == null)
+            {
+                e.CancelEdit = true;
+                return;
+            }
+
             var test = e.Node.Parent.Text.ToString().Substring(9);
 
             int index = -1;
@@ -180,6 +186,18 @@ namespace SPEEmulatorTestApp
             }
 
             m_spe.SPU.Register[index].Value = new SPEEmulator.RegisterValue(high, low);
+        }
+
+        private void treeView1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2)
+                treeView1.SelectedNode.BeginEdit();
+        }
+
+        private void treeView1_BeforeLabelEdit(object sender, NodeLabelEditEventArgs e)
+        {
+            if (treeView1.SelectedNode.Nodes.Count != 0)
+                e.CancelEdit = true;
         }
     }
 }
