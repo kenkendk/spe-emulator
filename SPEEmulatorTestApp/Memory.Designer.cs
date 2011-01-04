@@ -36,6 +36,7 @@
             this.checkBoxASCII = new System.Windows.Forms.CheckBox();
             this.checkBoxInst = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.editMemBtn = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // richTextBox1
@@ -47,7 +48,7 @@
             this.richTextBox1.Location = new System.Drawing.Point(12, 52);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.Size = new System.Drawing.Size(580, 700);
+            this.richTextBox1.Size = new System.Drawing.Size(580, 686);
             this.richTextBox1.TabIndex = 0;
             this.richTextBox1.Text = "";
             this.richTextBox1.WordWrap = false;
@@ -126,11 +127,22 @@
             this.label2.Text = "Instruction";
             this.label2.Visible = false;
             // 
+            // editMemBtn
+            // 
+            this.editMemBtn.Location = new System.Drawing.Point(517, 8);
+            this.editMemBtn.Name = "editMemBtn";
+            this.editMemBtn.Size = new System.Drawing.Size(75, 23);
+            this.editMemBtn.TabIndex = 11;
+            this.editMemBtn.Text = "Edit memory";
+            this.editMemBtn.UseVisualStyleBackColor = true;
+            this.editMemBtn.Click += new System.EventHandler(this.editMemBtn_Click);
+            // 
             // Memory
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(604, 764);
+            this.ClientSize = new System.Drawing.Size(604, 750);
+            this.Controls.Add(this.editMemBtn);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.checkBoxInst);
             this.Controls.Add(this.checkBoxASCII);
@@ -156,5 +168,6 @@
         private System.Windows.Forms.CheckBox checkBoxASCII;
         private System.Windows.Forms.CheckBox checkBoxInst;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Button editMemBtn;
     }
 }
