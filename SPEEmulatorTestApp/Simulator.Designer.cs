@@ -488,6 +488,7 @@
             this.MinimumSize = new System.Drawing.Size(435, 456);
             this.Name = "Simulator";
             this.Text = "SPE Simulator";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Simulator_FormClosed);
             ((System.ComponentModel.ISupportInitialize)(this.OutMboxValue)).EndInit();
             this.SimulationControls.ResumeLayout(false);
             this.SimulationControls.PerformLayout();
