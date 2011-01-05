@@ -434,6 +434,24 @@ namespace SPEEmulator
         }
 
         /// <summary>
+        /// Reads the dword value from LS, starting at the specified offset
+        /// </summary>
+        /// <param name="offset">The starting offset</param>
+        /// <returns>The dword value read</returns>
+        public ulong ReadLSDWord(uint offset)
+        {
+            return
+                (ulong)((ulong)LS[offset] << (8 * 7)) |
+                ((ulong)LS[offset + 1] << (8 * 6)) |
+                ((ulong)LS[offset + 2] << (8 * 5)) |
+                ((ulong)LS[offset + 3] << (8 * 4)) |
+                ((ulong)LS[offset + 4] << (8 * 3)) |
+                ((ulong)LS[offset + 5] << (8 * 2)) |
+                ((ulong)LS[offset + 6] << (8 * 1)) |
+                ((ulong)LS[offset + 7] << (8 * 0));
+        }
+
+        /// <summary>
         /// Writes a word value to LS, starting at the specified offset
         /// </summary>
         /// <param name="offset">The starting offset</param>
@@ -444,6 +462,62 @@ namespace SPEEmulator
             LS[offset + 1] = (byte)((value >> (8 * 2)) & 0xff);
             LS[offset + 2] = (byte)((value >> (8 * 1)) & 0xff);
             LS[offset + 3] = (byte)((value >> (8 * 0)) & 0xff);
+        }
+
+        /// <summary>
+        /// Writes a dword value to LS, starting at the specified offset
+        /// </summary>
+        /// <param name="offset">The starting offset</param>
+        /// <param name="value">The value to write</param>
+        public void WriteLSDWord(uint offset, ulong value)
+        {
+            LS[offset] = (byte)((value >> (8 * 7)) & 0xff);
+            LS[offset + 1] = (byte)((value >> (8 * 6)) & 0xff);
+            LS[offset + 2] = (byte)((value >> (8 * 5)) & 0xff);
+            LS[offset + 3] = (byte)((value >> (8 * 4)) & 0xff);
+            LS[offset + 4] = (byte)((value >> (8 * 3)) & 0xff);
+            LS[offset + 5] = (byte)((value >> (8 * 2)) & 0xff);
+            LS[offset + 6] = (byte)((value >> (8 * 1)) & 0xff);
+            LS[offset + 7] = (byte)((value >> (8 * 0)) & 0xff);
+        }
+
+        /// <summary>
+        /// Writes a zero terminated string to LS, starting at the specified offset
+        /// </summary>
+        /// <param name="offset">The starting offset</param>
+        /// <param name="value">The value to write</param>
+        public void WriteLSString(uint offset, string value)
+        {
+            foreach (char c in value)
+                LS[offset++] = (byte)c;
+            
+            LS[offset] = 0;
+        }
+
+        /// <summary>
+        /// Write a single value from LS
+        /// </summary>
+        /// <param name="offset">The offset to start writing to</param>
+        public void WriteLSFloat(uint offset, float value)
+        {
+            byte[] data = BitConverter.GetBytes(value);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(data);
+
+            Array.Copy(data, 0, m_ls, (int)offset, data.Length);
+        }
+
+        /// <summary>
+        /// Write a single value from LS
+        /// </summary>
+        /// <param name="offset">The offset to start writing to</param>
+        public void WriteLSDouble(uint offset, double value)
+        {
+            byte[] data = BitConverter.GetBytes(value);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(data);
+
+            Array.Copy(data, 0, m_ls, (int)offset, data.Length);
         }
 
         /// <summary>
@@ -468,7 +542,7 @@ namespace SPEEmulator
         public double ReadLSDouble(uint offset)
         {
             byte[] data = new byte[8];
-            Array.Copy(m_ls, (int)offset, data, 0, 8);
+            Array.Copy(m_ls, (int)offset, data, 0, data.Length);
             
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(data);
@@ -484,7 +558,7 @@ namespace SPEEmulator
         public double ReadLSFloat(uint offset)
         {
             byte[] data = new byte[4];
-            Array.Copy(m_ls, (int)offset, data, 0, 4);
+            Array.Copy(m_ls, (int)offset, data, 0, data.Length);
             
             if(BitConverter.IsLittleEndian)
                 Array.Reverse(data);

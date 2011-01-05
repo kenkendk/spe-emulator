@@ -165,7 +165,7 @@ namespace SPEEmulatorTestApp
                     FilenamePanel.Enabled = true;
                     StartButton.Text = "Start";
                     PauseButton.Enabled = false;
-                    m_spe = null;
+                    //m_spe = null;
                 }
                 else if (spe.State == SPEEmulator.SPEState.Paused)
                 {
@@ -368,13 +368,6 @@ namespace SPEEmulatorTestApp
                 m_formRegister.Left = this.Right;
             }
         }
-
-        private void Simulator_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            if (m_spe != null && (m_spe.State == SPEEmulator.SPEState.Paused || m_spe.State == SPEEmulator.SPEState.Running))
-                m_spe.Stop();
-        }
-    }
 
         public void StartAndPause()
         {

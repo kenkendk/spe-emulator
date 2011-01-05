@@ -1146,6 +1146,7 @@ namespace SPEEmulator.OpCodes
     public partial class stop : Bases.Instruction
     {
         public stop() : base("0000 0000 000") { }
+        public stop(uint signal) : base("0000 0000 000") { StopAndSignalType = signal; }
     }
     /// <summary>Stop and Signal with Dependencies</summary>
     public class stopd : Bases.RR
