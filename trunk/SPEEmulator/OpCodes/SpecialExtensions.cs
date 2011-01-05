@@ -15,7 +15,7 @@ namespace SPEEmulator.OpCodes
             get { return (m_value >> REGISTER_SIZE) & REGISTER_MASK; }
             set
             {
-                System.Diagnostics.Trace.Assert((value & REGISTER_MASK) == 0);
+                System.Diagnostics.Trace.Assert((value & ~REGISTER_MASK) == 0);
                 m_value |= (value & REGISTER_MASK) << REGISTER_SIZE;
             }
         }
@@ -28,7 +28,7 @@ namespace SPEEmulator.OpCodes
             get { return m_value & REGISTER_MASK; }
             set
             {
-                System.Diagnostics.Trace.Assert((value & REGISTER_MASK) == 0);
+                System.Diagnostics.Trace.Assert((value & ~REGISTER_MASK) == 0);
                 m_value |= value & REGISTER_MASK;
             }
         }
@@ -41,7 +41,7 @@ namespace SPEEmulator.OpCodes
             get { return (m_value >> (REGISTER_SIZE * 2)) & 0x3; }
             set
             {
-                System.Diagnostics.Trace.Assert((value & 0x3) == 0);
+                System.Diagnostics.Trace.Assert((value & ~0x3) == 0);
                 m_value |= (value & 0x3) << (REGISTER_SIZE * 2);
             }
         }
@@ -54,7 +54,7 @@ namespace SPEEmulator.OpCodes
             get { return (ROH << REGISTER_SIZE) | ROL; }
             set
             {
-                System.Diagnostics.Trace.Assert((value & 0x1ff) == 0);
+                System.Diagnostics.Trace.Assert((value & ~0x1ff) == 0);
                 ROL = value & REGISTER_MASK;
                 ROH = (value >> REGISTER_SIZE) & 0x3f;
             }
@@ -91,7 +91,7 @@ namespace SPEEmulator.OpCodes
             get { return m_value & 0x3fff; }
             set
             {
-                System.Diagnostics.Trace.Assert((value & 0x3fff) == 0);
+                System.Diagnostics.Trace.Assert((value & ~0x3fff) == 0);
                 m_value |= value & 0x3fff;
             }
         }
