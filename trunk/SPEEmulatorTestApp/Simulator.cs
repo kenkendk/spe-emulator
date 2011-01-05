@@ -375,4 +375,12 @@ namespace SPEEmulatorTestApp
                 m_spe.Stop();
         }
     }
+
+        public void StartAndPause()
+        {
+            Start(true);
+        }
+
+        public SPEEmulator.SPEProcessor SPE { get { return m_spe; } }
+    }
 }
