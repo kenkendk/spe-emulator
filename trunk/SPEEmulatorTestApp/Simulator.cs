@@ -375,5 +375,24 @@ namespace SPEEmulatorTestApp
         }
 
         public SPEEmulator.SPEProcessor SPE { get { return m_spe; } }
+
+        private void Simulator_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F10)
+            {
+                try { StepButton.PerformClick(); }
+                catch { }
+                
+                e.Handled = true;
+            }
+            else if (e.KeyCode == Keys.F5)
+            {
+                try { StartButton.PerformClick(); }
+                catch { }
+
+                e.Handled = true;
+            }
+        }
+
     }
 }

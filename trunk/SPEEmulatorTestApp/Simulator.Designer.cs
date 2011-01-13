@@ -485,9 +485,11 @@
             this.Controls.Add(this.SimulationControls);
             this.Controls.Add(this.SimulationButtonPanel);
             this.Controls.Add(this.FilenamePanel);
+            this.KeyPreview = true;
             this.MinimumSize = new System.Drawing.Size(435, 456);
             this.Name = "Simulator";
             this.Text = "SPE Simulator";
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Simulator_KeyUp);
             ((System.ComponentModel.ISupportInitialize)(this.OutMboxValue)).EndInit();
             this.SimulationControls.ResumeLayout(false);
             this.SimulationControls.PerformLayout();
