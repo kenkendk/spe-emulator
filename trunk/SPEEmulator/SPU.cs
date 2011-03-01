@@ -799,7 +799,7 @@ namespace SPEEmulator
         private void Execute(OpCodes.sfi i)
         {
             uint t = RepLeftBit(i, 0);
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)((t + ~a + 1) & 0xffffffff));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)((t + ~a + 1) & 0xffffffff));
         }
 
         private void Execute(OpCodes.addx i)
@@ -1086,7 +1086,7 @@ namespace SPEEmulator
         private void Execute(OpCodes.andi i)
         {
             uint t = RepLeftBit(i, 0);
-            m_registers[i.RT].Value = ALUHalfWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a & t));
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => (uint)(a & t));
         }
 
         private void Execute(OpCodes.or i)
@@ -2235,13 +2235,13 @@ namespace SPEEmulator
                 }
                 else
                 {
-                    m_spe.RaiseMissingMethodError(string.Format("The userdefined callback {0} is not registered, function code was {1}", handler, func));
+                    m_spe.RaiseExitEvent(i.StopAndSignalType & 0xff);
                 }
             }
-            else if ((i.StopAndSignalType & 0xff00) == 0x2000)
+            /*else if ((i.StopAndSignalType & 0xff00) == 0x2000)
             {
                 m_spe.RaiseExitEvent(i.StopAndSignalType & 0xff);
-            }
+            }*/
         }
 
         /// <summary>
