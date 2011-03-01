@@ -565,6 +565,28 @@ namespace SPEEmulator
             
             return BitConverter.ToSingle(data, 0);
         }
+
+        /// <summary>
+        /// Loads an ELF binary and sets up the SPE for executing the ELF
+        /// </summary>
+        /// <param name="filename">The file that contains the ELF to run</param>
+        public void LoadELF(string filename)
+        {
+            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
+                LoadELF(fs);
+        }
+
+        /// <summary>
+        /// Loads an ELF binary and sets up the SPE for executing the ELF
+        /// </summary>
+        /// <param name="filename">The stream that contains the ELF to run</param>
+        public void LoadELF(System.IO.Stream stream)
+        {
+            SPEEmulator.ELFReader r = new SPEEmulator.ELFReader(stream);
+            r.SetupExecutionEnv(this);
+
+        }
+
         #endregion
 
         #region Private methods

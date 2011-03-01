@@ -313,11 +313,7 @@ namespace SPEEmulatorTestApp
 
                 try
                 {
-                    using (System.IO.FileStream fs = System.IO.File.OpenRead(ELFFilename.Text))
-                    {
-                        SPEEmulator.ELFReader r = new SPEEmulator.ELFReader(fs);
-                        r.SetupExecutionEnv(m_spe);
-                    }
+                    m_spe.LoadELF(ELFFilename.Text);
                 }
                 catch (Exception ex)
                 {
