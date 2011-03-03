@@ -123,36 +123,45 @@ namespace SPEEmulator
 
         public float ReadFloat()
         {
-            float f;
-            if (BitConverter.IsLittleEndian)
-            {
-                byte[] tmp = new byte[4];
-                Array.Copy(m_storage, m_position, tmp, 0, 4);
-                Array.Reverse(tmp);
-                f = BitConverter.ToSingle(tmp, 0);
-            }
-            else
-                f = BitConverter.ToSingle(m_storage, (int)m_position);
-
+            float f = ReadFloat(m_position);
             m_position += 4;
             return f;
         }
 
-        public double ReadDouble()
+        public float ReadFloat(uint offset)
+        {
+            
+            if (BitConverter.IsLittleEndian)
+            {
+                byte[] tmp = new byte[4];
+                Array.Copy(m_storage, offset, tmp, 0, 4);
+                Array.Reverse(tmp);
+                return BitConverter.ToSingle(tmp, 0);
+            }
+            else
+                return BitConverter.ToSingle(m_storage, (int)offset);
+        }
+
+        public double ReadDouble(uint offset)
         {
             double f;
             if (BitConverter.IsLittleEndian)
             {
                 byte[] tmp = new byte[8];
-                Array.Copy(m_storage, m_position, tmp, 0, 8);
+                Array.Copy(m_storage, offset, tmp, 0, 8);
                 Array.Reverse(tmp);
-                f = BitConverter.ToDouble(tmp, 0);
+                return BitConverter.ToDouble(tmp, 0);
             }
             else
-                f = BitConverter.ToDouble(m_storage, (int)m_position);
+                return BitConverter.ToDouble(m_storage, (int)offset);
 
+        }
+
+        public double ReadDouble()
+        {
+            Double d = ReadDouble(m_position);
             m_position += 8;
-            return f;
+            return d;
         }
 
         /// <summary>
