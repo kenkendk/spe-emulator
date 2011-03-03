@@ -2217,31 +2217,15 @@ namespace SPEEmulator
                 uint handler = i.StopAndSignalType & 0xff;
                 uint func = m_spe.ReadLSWord(this.PC & m_spe.LSLR);
 
-                if (handler == 0) //C99
-                {
-                    if (C99DefaultHandler.HandleOp(m_spe, func))
-                    {
-                        m_doRun = true;
-                        PC = m_registers[0].Word;
-                    }
-                }
-                else if (handler == 1) //Posix
-                {
-                    m_spe.RaiseMissingMethodError(string.Format("The posix method {0} is not implemented", func));
-                }
-                else if (handler == 4) //Libea
-                {
-                    m_spe.RaiseMissingMethodError(string.Format("The libea method {0} is not implemented", func));
-                }
-                else
-                {
-                    m_spe.RaiseExitEvent(i.StopAndSignalType & 0xff);
-                }
+                if (m_spe.InvokeCallbackHandler(handler, this.PC & m_spe.LSLR))
+                    m_doRun = true;
+
+                PC = m_registers[0].Word;
             }
-            /*else if ((i.StopAndSignalType & 0xff00) == 0x2000)
+            else
             {
-                m_spe.RaiseExitEvent(i.StopAndSignalType & 0xff);
-            }*/
+                m_spe.RaiseExitEvent(i.StopAndSignalType);
+            }
         }
 
         /// <summary>

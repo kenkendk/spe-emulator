@@ -13,6 +13,8 @@ namespace SPEEmulator
 
     public delegate void ExitEventDelegate(SPEProcessor sender, uint exitcode);
 
+    public delegate bool CallbackHandlerDelegate(byte[] ls, uint ls_offset);
+
     /// <summary>
     /// Describes the warnings the SPE can issue
     /// </summary>
@@ -118,6 +120,16 @@ namespace SPEEmulator
         /// The MFC unit
         /// </summary>
         private MFC m_mfc;
+
+        /// <summary>
+        /// The list of registered callback handlers
+        /// </summary>
+        private Dictionary<uint, CallbackHandlerDelegate> m_callbackhandlers;
+
+        /// <summary>
+        /// The bitconverter used to manipulate the LS
+        /// </summary>
+        private EndianBitConverter m_converter;
         #endregion
 
         #region Public Events
@@ -209,6 +221,14 @@ namespace SPEEmulator
 
             m_spu = new SPU(this);
             m_mfc = new MFC();
+
+            m_callbackhandlers = new Dictionary<uint, CallbackHandlerDelegate>();
+            DefaultCallbackhandler h = new DefaultCallbackhandler(this);
+            m_callbackhandlers.Add(0, h.C99Handler);
+            m_callbackhandlers.Add(1, h.DefaultPosixHandler);
+            m_callbackhandlers.Add(2, h.DefaultLibeaHandler);
+            m_converter = new EndianBitConverter(m_ls);
+
         }
 
         /// <summary>
@@ -426,11 +446,7 @@ namespace SPEEmulator
         /// <returns>The word value read</returns>
         public uint ReadLSWord(uint offset)
         {
-            return
-                (uint)(LS[offset] << (8 * 3)) |
-                ((uint)LS[offset + 1] << (8 * 2)) |
-                ((uint)LS[offset + 2] << (8 * 1)) |
-                ((uint)LS[offset + 3] << (8 * 0));
+            return m_converter.ReadUInt(offset);
         }
 
         /// <summary>
@@ -440,15 +456,7 @@ namespace SPEEmulator
         /// <returns>The dword value read</returns>
         public ulong ReadLSDWord(uint offset)
         {
-            return
-                (ulong)((ulong)LS[offset] << (8 * 7)) |
-                ((ulong)LS[offset + 1] << (8 * 6)) |
-                ((ulong)LS[offset + 2] << (8 * 5)) |
-                ((ulong)LS[offset + 3] << (8 * 4)) |
-                ((ulong)LS[offset + 4] << (8 * 3)) |
-                ((ulong)LS[offset + 5] << (8 * 2)) |
-                ((ulong)LS[offset + 6] << (8 * 1)) |
-                ((ulong)LS[offset + 7] << (8 * 0));
+            return m_converter.ReadULong(offset);
         }
 
         /// <summary>
@@ -458,10 +466,7 @@ namespace SPEEmulator
         /// <param name="value">The value to write</param>
         public void WriteLSWord(uint offset, uint value)
         {
-            LS[offset] = (byte)((value >> (8 * 3)) & 0xff);
-            LS[offset + 1] = (byte)((value >> (8 * 2)) & 0xff);
-            LS[offset + 2] = (byte)((value >> (8 * 1)) & 0xff);
-            LS[offset + 3] = (byte)((value >> (8 * 0)) & 0xff);
+            m_converter.WriteUInt(offset, value);
         }
 
         /// <summary>
@@ -471,14 +476,7 @@ namespace SPEEmulator
         /// <param name="value">The value to write</param>
         public void WriteLSDWord(uint offset, ulong value)
         {
-            LS[offset] = (byte)((value >> (8 * 7)) & 0xff);
-            LS[offset + 1] = (byte)((value >> (8 * 6)) & 0xff);
-            LS[offset + 2] = (byte)((value >> (8 * 5)) & 0xff);
-            LS[offset + 3] = (byte)((value >> (8 * 4)) & 0xff);
-            LS[offset + 4] = (byte)((value >> (8 * 3)) & 0xff);
-            LS[offset + 5] = (byte)((value >> (8 * 2)) & 0xff);
-            LS[offset + 6] = (byte)((value >> (8 * 1)) & 0xff);
-            LS[offset + 7] = (byte)((value >> (8 * 0)) & 0xff);
+            m_converter.WriteULong(offset, value);
         }
 
         /// <summary>
@@ -500,11 +498,7 @@ namespace SPEEmulator
         /// <param name="offset">The offset to start writing to</param>
         public void WriteLSFloat(uint offset, float value)
         {
-            byte[] data = BitConverter.GetBytes(value);
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(data);
-
-            Array.Copy(data, 0, m_ls, (int)offset, data.Length);
+            m_converter.WriteFloat(offset, value);
         }
 
         /// <summary>
@@ -585,6 +579,37 @@ namespace SPEEmulator
             SPEEmulator.ELFReader r = new SPEEmulator.ELFReader(stream);
             r.SetupExecutionEnv(this);
 
+        }
+
+        /// <summary>
+        /// Registers a callback handler. Note that 0, 1 and 2 are taken by the system
+        /// </summary>
+        /// <param name="callnum">The callback number to register for</param>
+        /// <param name="handler">The callback function to invoke</param>
+        public void RegisterCallbackHandler(uint callnum, CallbackHandlerDelegate handler)
+        {
+            if (callnum > 0xff)
+                throw new ArgumentOutOfRangeException("Callnum must be between 0 and 255");
+
+            if (callnum == 0 || callnum == 1 || callnum == 2)
+                throw new InvalidOperationException("Cannot register system handlers");
+
+            m_callbackhandlers.Add(callnum, handler);
+        }
+
+        /// <summary>
+        /// Unregisters a callback handler.
+        /// </summary>
+        /// <param name="callnum">The callback number to unregister</param>
+        public void UnregisterCallbackHandler(uint callnum)
+        {
+            if (callnum > 0xff)
+                throw new ArgumentOutOfRangeException("Callnum must be between 0 and 255");
+
+            if (callnum == 0 || callnum == 1 || callnum == 2)
+                throw new InvalidOperationException("Cannot de-register system handlers");
+            
+            m_callbackhandlers.Remove(callnum);
         }
 
         #endregion
@@ -745,6 +770,15 @@ namespace SPEEmulator
             if (Exit != null)
                 Exit(this, code);
         }
+
+        internal bool InvokeCallbackHandler(uint handler, uint p)
+        {
+            if (m_callbackhandlers.ContainsKey(handler))
+                return m_callbackhandlers[handler](m_ls, p);
+            else
+                throw new Exception("Unregistered callback function activated");
+        }
         #endregion
+
     }
 }
