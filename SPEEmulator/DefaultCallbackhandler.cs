@@ -5,8 +5,10 @@ using System.Text;
 
 namespace SPEEmulator
 {
-    static class C99DefaultHandler
+    internal class DefaultCallbackhandler
     {
+        private SPEProcessor m_spe;
+
         private enum C99Function : uint
         {
             CLEARERR = 0x01,
@@ -53,9 +55,15 @@ namespace SPEEmulator
             LAST_OPCODE,
         }
 
-        public static bool HandleOp(SPEProcessor spe, uint func)
+        public DefaultCallbackhandler(SPEProcessor owner)
         {
-            
+            m_spe = owner;
+        }
+
+        public bool C99Handler(byte[] ls, uint ls_offset)
+        {
+            EndianBitConverter cv = new EndianBitConverter(ls);
+            uint func = cv.ReadUInt(ls_offset);
             C99Function pfunc = (C99Function)((func >> 24) & 0xff);
             uint ls_args = func & 0xffffff;
 
@@ -63,13 +71,13 @@ namespace SPEEmulator
             {
                 case C99Function.VPRINTF:
                     {
-                        string format = spe.ReadLSString(spe.ReadLSWord(LS_ARG_ADDR(ls_args, 0)));
-                        spe.RaisePrintfIssued(printf(spe, ls_args, format));
-                        spe.WriteLSWord(LS_ARG_ADDR(ls_args, 0), 0u);
+                        string format = m_spe.ReadLSString(cv.ReadUInt(LS_ARG_ADDR(ls_args, 0)));
+                        m_spe.RaisePrintfIssued(printf(m_spe, ls_args, format));
+                        cv.WriteUInt(LS_ARG_ADDR(ls_args, 0), 0u);
                         return true;
                     }
                 default:
-                    spe.RaiseMissingMethodError(string.Format("The method {0} is not implemented", pfunc));
+                    m_spe.RaiseMissingMethodError(string.Format("The method {0} is not implemented", pfunc));
                     break;
             }
 
@@ -130,6 +138,22 @@ namespace SPEEmulator
             }
 
             return AT.MIN.Tools.sprintf(format, data.ToArray());
+        }
+
+        public bool DefaultPosixHandler(byte[] ls, uint ls_offset)
+        {
+            EndianBitConverter cv = new EndianBitConverter(ls);
+            uint func = cv.ReadUInt(ls_offset);
+            m_spe.RaiseMissingMethodError(string.Format("The posix method {0} is not implemented", func));
+            return true;
+        }
+
+        public bool DefaultLibeaHandler(byte[] ls, uint ls_offset)
+        {
+            EndianBitConverter cv = new EndianBitConverter(ls);
+            uint func = cv.ReadUInt(ls_offset);
+            m_spe.RaiseMissingMethodError(string.Format("The libea method {0} is not implemented", func));
+            return true;
         }
     }
 }

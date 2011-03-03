@@ -43,8 +43,9 @@
     <Compile Include="..\thirdparty\printf\Tools.cs">
       <Link>Tools.cs</Link>
     </Compile>
-    <Compile Include="C99DefaultHandler.cs" />
+    <Compile Include="DefaultCallbackhandler.cs" />
     <Compile Include="ELFReader.cs" />
+    <Compile Include="EndianBitConverter.cs" />
     <Compile Include="MFC.cs" />
     <Compile Include="OpCodes\Bases\Instruction.cs" />
     <Compile Include="OpCodes\Bases\R.cs" />
