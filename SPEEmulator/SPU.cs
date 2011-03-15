@@ -2357,6 +2357,19 @@ namespace SPEEmulator
             }
         }
 
+        private void Execute(OpCodes.csflt i)
+        {
+            m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => {
+                float value = (float)(((int)a) / Math.Pow(2, i.I8));
+
+                byte[] tmp = BitConverter.GetBytes(value);
+                /*if (BitConverter.IsLittleEndian)
+                    Array.Reverse(tmp);*/
+
+                return BitConverter.ToUInt32(tmp, 0);
+            });
+        }
+
         #endregion
     }
 }
