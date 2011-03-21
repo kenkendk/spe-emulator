@@ -46,6 +46,7 @@
     <Compile Include="DefaultCallbackhandler.cs" />
     <Compile Include="ELFReader.cs" />
     <Compile Include="EndianBitConverter.cs" />
+    <Compile Include="IEndianBitConverter.cs" />
     <Compile Include="MFC.cs" />
     <Compile Include="OpCodes\Bases\Instruction.cs" />
     <Compile Include="OpCodes\Bases\R.cs" />

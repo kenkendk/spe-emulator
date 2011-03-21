@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SPEEmulator
 {
-    public class EndianBitConverter
+    public class EndianBitConverter : SPEEmulator.IEndianBitConverter
     {
         private byte[] m_storage;
         private uint m_position = 0;
@@ -284,5 +284,27 @@ namespace SPEEmulator
         }
 
         public byte[] Data { get { return m_storage; } }
+
+        public void WriteBytes(uint offset, byte[] data)
+        {
+            Array.Copy(data, 0, m_storage, offset, data.Length);
+        }
+
+        public void WriteBytes(byte[] data)
+        {
+            WriteBytes(m_position, data);
+            m_position += (uint)data.Length;
+        }
+
+        public void ReadBytes(uint offset, byte[] data)
+        {
+            Array.Copy(m_storage, offset, data, 0, data.Length);
+        }
+
+        public void ReadBytes(byte[] data)
+        {
+            ReadBytes(m_position, data);
+            m_position += (uint)data.Length;
+        }
     }
 }
