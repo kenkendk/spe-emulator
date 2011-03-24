@@ -10,6 +10,22 @@ namespace SPEEmulator
     public class ELFReader
     {
         private static readonly byte[] MAGIC_HEADER = new byte[] { 0x7f, (byte)'E', (byte)'L', (byte)'F' };
+        private static readonly byte[] SPU_NOTE = new byte[] { 
+            0, 0, 0, 0x8, 
+            0, 0, 0, 0xc,
+            0, 0, 0, 0x1,
+            0x53, 0x50, 0x55, 0x4e, 0x41, 0x4d, 0x45, 0x00, //"SPUNAME\0"
+            0x74, 0x65, 0x73, 0x74, 0x63, 0x6f, 0x6d, 0x70, 0x69, 0x6c, 0x65, 0x00 //"testcompile\0"
+        };
+
+        private static string SPU_NOTE_NAME = ".note.spu_name";
+        private static string INIT_NAME = ".init";
+        private static string SECTION_HEADER_STR_TABLENAME = ".shstrtab";
+        private static string SYMBOLE_TABLE_STR_TABLENAME = ".symtab";
+        private static string STRING_TABLE_STR_TABLENAME = ".strtab";
+
+        private static readonly uint PROGRAMHEADER_SIZE = (uint)Marshal.SizeOf(typeof(ProgramHeader));
+        private static readonly uint SECTIONHEADER_SIZE = (uint)Marshal.SizeOf(typeof(SectionHeader));
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct ELF32Header
@@ -186,32 +202,129 @@ namespace SPEEmulator
             header.data_enc = 2;
             header.type = 2;
             header.dummy = 0;
-            header.ehsize = 52;
+            header.ehsize = (ushort)Marshal.SizeOf(typeof(ELF32Header)); //52;
             header.entry = entryOffset;
             header.padding = 0;
-            header.phnum = 1;
-            header.phentsize = 32;
+            header.phnum = 2;
+            header.phentsize = (ushort)(PROGRAMHEADER_SIZE);
             header.phoff = header.ehsize;
-            header.shentsize = 40;
-            header.shnum = 0;
-            header.shoff = header.ehsize;
-            header.shstrndx = 0;
+            header.shnum = 4;
+            header.shentsize = (ushort)(SECTIONHEADER_SIZE);
+            header.shoff = header.phoff + (uint)(header.phentsize * header.phnum);
+            header.shstrndx = 3;
 
             header.machine = 23;
             header.version = 1;
             header.flags = 0;
 
             ProgramHeader[] progheaders = new ProgramHeader[header.phnum];
-            SectionHeader[] sectionheaders = new SectionHeader[0];
+            SectionHeader[] sectionheaders = new SectionHeader[header.shnum];
+
+            MemoryStream spu_note = new MemoryStream();
+            MemoryStream sh_strings = new MemoryStream();
+
+            uint first_area = header.shoff + (uint)(header.shentsize * header.shnum);
+
+            while (first_area % 16 != 0)
+            {
+                first_area++;
+                spu_note.WriteByte(0);
+            }
 
             progheaders[0].align = 128;
             progheaders[0].filesz = codesize;
             progheaders[0].memsz = codesize;
-            progheaders[0].offset = (uint)(header.ehsize + header.phentsize);
+            progheaders[0].offset = first_area;
             progheaders[0].paddr = 0;
             progheaders[0].vaddr = 0;
             progheaders[0].type = 1;
-            progheaders[0].flags = 0x1;
+            progheaders[0].flags = 0x7;
+
+            progheaders[1].align = 16;
+            progheaders[1].filesz = (uint)SPU_NOTE.Length;
+            progheaders[1].memsz = 0;
+            progheaders[1].offset = first_area;
+            progheaders[1].paddr = 0;
+            progheaders[1].vaddr = 0;
+            progheaders[1].type = 4;
+            progheaders[1].flags = 0x4;
+            
+            spu_note.Write(SPU_NOTE, 0, SPU_NOTE.Length);
+            first_area += (uint)SPU_NOTE.Length;
+
+            //Null entry
+            sectionheaders[0].name = 0;
+            sectionheaders[0].type = 0;
+            sectionheaders[0].addr = 0;
+            sectionheaders[0].offset = 0;
+            sectionheaders[0].size = 0;
+            sectionheaders[0].entsize = 0;
+            sectionheaders[0].flags = 0;
+            sectionheaders[0].link = 0;
+            sectionheaders[0].info = 0;
+            sectionheaders[0].addralign = 0;
+
+            sh_strings.WriteByte(0);
+
+            //.init
+            sectionheaders[1].name = (uint)sh_strings.Length;
+            sectionheaders[1].type = 1;
+            sectionheaders[1].addr = 0;
+            sectionheaders[1].offset = progheaders[0].offset;
+            sectionheaders[1].size = progheaders[0].filesz;
+            sectionheaders[1].entsize = 0;
+            sectionheaders[1].flags = 6;
+            sectionheaders[1].link = 0;
+            sectionheaders[1].info = 0;
+            sectionheaders[1].addralign = 4;
+
+            byte[] tmp = System.Text.Encoding.ASCII.GetBytes(INIT_NAME);
+            sh_strings.Write(tmp, 0, tmp.Length);
+            sh_strings.WriteByte(0);
+
+            //.note
+            sectionheaders[2].name = (uint)sh_strings.Length;
+            sectionheaders[2].type = 7;
+            sectionheaders[2].addr = 0;
+            sectionheaders[2].offset = progheaders[1].offset;
+            sectionheaders[2].size = progheaders[1].filesz;
+            sectionheaders[2].entsize = 0;
+            sectionheaders[2].flags = 0;
+            sectionheaders[2].link = 0;
+            sectionheaders[2].info = 0;
+            sectionheaders[2].addralign = 16;
+
+            tmp = System.Text.Encoding.ASCII.GetBytes(SPU_NOTE_NAME);
+            sh_strings.Write(tmp, 0, tmp.Length);
+            sh_strings.WriteByte(0);
+
+
+            //.shstrtab
+            sectionheaders[3].name = (uint)sh_strings.Length;
+
+            tmp = System.Text.Encoding.ASCII.GetBytes(SECTION_HEADER_STR_TABLENAME);
+            sh_strings.Write(tmp, 0, tmp.Length);
+            sh_strings.WriteByte(0);
+
+            sectionheaders[3].type = 3;
+            sectionheaders[3].addr = 0;
+            sectionheaders[3].offset = first_area;
+            sectionheaders[3].size = (uint)sh_strings.Length;
+            sectionheaders[3].entsize = 0;
+            sectionheaders[3].flags = 0;
+            sectionheaders[3].link = 0;
+            sectionheaders[3].info = 0;
+            sectionheaders[3].addralign = 1;
+
+            first_area += sectionheaders[3].size;
+
+            while (first_area % 16 != 0)
+            {
+                sh_strings.WriteByte(0);
+                first_area++;
+            }
+
+            progheaders[0].offset = sectionheaders[1].offset = first_area;
 
             if (BitConverter.IsLittleEndian)
             {
@@ -219,10 +332,33 @@ namespace SPEEmulator
                 progheaders[0] = FixEndian(progheaders[0]);
             }
 
-            byte[] tmp = WriteStruct(header);
+            tmp = WriteStruct(header);
             stream.Write(tmp, 0, tmp.Length);
-            tmp = WriteStruct(progheaders[0]);
-            stream.Write(tmp, 0, tmp.Length);
+
+            foreach (ProgramHeader ph in progheaders)
+            {
+                tmp = WriteStruct(ph);
+                stream.Write(tmp, 0, tmp.Length);
+            }
+
+            foreach (SectionHeader sh in sectionheaders)
+            {
+                tmp = WriteStruct(sh);
+                stream.Write(tmp, 0, tmp.Length);
+            }
+
+            spu_note.Position = 0;
+            spu_note.CopyTo(stream);
+
+            sh_strings.Position = 0;
+            sh_strings.CopyTo(stream);
+        }
+
+        private static byte[] CreateAsciizString(string value)
+        {
+            byte[] tmp = new byte[System.Text.Encoding.ASCII.GetByteCount(value) + 1];
+            System.Text.Encoding.ASCII.GetBytes(value, 0, value.Length, tmp, 0);
+            return tmp;
         }
 
         public ELFReader(Stream s)
