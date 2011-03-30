@@ -21,8 +21,6 @@ namespace SPEEmulator
         private static string SPU_NOTE_NAME = ".note.spu_name";
         private static string INIT_NAME = ".init";
         private static string SECTION_HEADER_STR_TABLENAME = ".shstrtab";
-        private static string SYMBOLE_TABLE_STR_TABLENAME = ".symtab";
-        private static string STRING_TABLE_STR_TABLENAME = ".strtab";
 
         private static readonly uint PROGRAMHEADER_SIZE = (uint)Marshal.SizeOf(typeof(ProgramHeader));
         private static readonly uint SECTIONHEADER_SIZE = (uint)Marshal.SizeOf(typeof(SectionHeader));
@@ -329,7 +327,7 @@ namespace SPEEmulator
             if (BitConverter.IsLittleEndian)
             {
                 header = FixEndian(header);
-                progheaders[0] = FixEndian(progheaders[0]);
+                
             }
 
             tmp = WriteStruct(header);
@@ -337,13 +335,19 @@ namespace SPEEmulator
 
             foreach (ProgramHeader ph in progheaders)
             {
-                tmp = WriteStruct(ph);
+                if (BitConverter.IsLittleEndian)
+                    tmp = WriteStruct(FixEndian(ph));
+                else
+                    tmp = WriteStruct(ph);
                 stream.Write(tmp, 0, tmp.Length);
             }
 
             foreach (SectionHeader sh in sectionheaders)
             {
-                tmp = WriteStruct(sh);
+                if (BitConverter.IsLittleEndian)
+                    tmp = WriteStruct(FixEndian(sh));
+                else
+                    tmp = WriteStruct(sh);
                 stream.Write(tmp, 0, tmp.Length);
             }
 
