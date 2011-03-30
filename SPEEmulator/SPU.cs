@@ -2220,12 +2220,14 @@ namespace SPEEmulator
                 if (m_spe.InvokeCallbackHandler(handler, this.PC & m_spe.LSLR))
                     m_doRun = true;
 
-                PC = m_registers[0].Word;
+                //Skip over the stop data
+                PC += 4;
             }
             else
             {
                 m_spe.RaiseExitEvent(i.StopAndSignalType);
             }
+
         }
 
         /// <summary>
@@ -2360,11 +2362,9 @@ namespace SPEEmulator
         private void Execute(OpCodes.csflt i)
         {
             m_registers[i.RT].Value = ALUWord(m_registers[i.RA].Value, null, null, (a, b, c, carry) => {
-                float value = (float)(((int)a) / Math.Pow(2, i.I8));
+                float value = (float)(((int)a) / Math.Pow(2, 155 - i.I8));
 
                 byte[] tmp = BitConverter.GetBytes(value);
-                /*if (BitConverter.IsLittleEndian)
-                    Array.Reverse(tmp);*/
 
                 return BitConverter.ToUInt32(tmp, 0);
             });

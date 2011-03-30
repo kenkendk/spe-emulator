@@ -130,7 +130,6 @@ namespace SPEEmulator
 
         public float ReadFloat(uint offset)
         {
-            
             if (BitConverter.IsLittleEndian)
             {
                 byte[] tmp = new byte[4];
@@ -144,7 +143,6 @@ namespace SPEEmulator
 
         public double ReadDouble(uint offset)
         {
-            double f;
             if (BitConverter.IsLittleEndian)
             {
                 byte[] tmp = new byte[8];
