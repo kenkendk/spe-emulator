@@ -130,6 +130,7 @@ namespace SPEEmulator
         /// The bitconverter used to manipulate the LS
         /// </summary>
         private EndianBitConverter m_converter;
+
         #endregion
 
         #region Public Events

@@ -92,6 +92,7 @@ namespace SPEEmulator
         private object m_lock = new object();
         private System.Threading.ManualResetEvent m_event;
         private volatile bool m_singleStep = false;
+        private ulong m_instructionsExecuted = 0;
 
         public SPU(SPEProcessor spe, uint registercount = 128)
         {
@@ -120,6 +121,8 @@ namespace SPEEmulator
                     throw new Exception(string.Format("The instruction {0} cannot be executed because no method supports it", m.ToString()));
 #endif
         }
+
+        public ulong InstructionsExecuted { get { return m_instructionsExecuted; } }
 
         /// <summary>
         /// Gets or sets the singlestep flag
@@ -174,6 +177,7 @@ namespace SPEEmulator
 
         private void ThreadRun()
         {
+            m_instructionsExecuted = 0;
             m_registers[3].Word = 0x0a0a0a0; //spu-id
             m_registers[4].Word = 0x0e0e0e0; //argp
             m_registers[5].Word = 0x0c0c0c0; //envp
@@ -224,6 +228,8 @@ namespace SPEEmulator
                         m_spe.RaiseMissingMethodError(string.Format("{0} is not implemented: {1}", op.Mnemonic, ex.ToString()));
                         break;
                     }
+
+                    m_instructionsExecuted++;
 
                     m_spe.RaiseInstructionExecuted();
                 }
